@@ -1,4 +1,5 @@
 using System.Numerics;
+using System.Reflection;
 using LinkUi.Tests.Support;
 
 namespace LinkUi.Tests;
@@ -30,11 +31,20 @@ internal static class LayoutScenarios
     {
         var m1 = Metrics.At(1f);
         Assertions.Check(m1.WindowRounding == 5 && m1.FramePadding == new Vector2(6, 3) && m1.HeaderExtra == 8 && m1.MinTitleWidth == 80, "base values");
-        foreach (var s in new[] { 1.5f, 2f })
+        // Every float and Vector2 size but Scale and BorderSize, by reflection, so a new one can't miss its scale.
+        var sizes = typeof(Metrics).GetProperties(BindingFlags.Public | BindingFlags.Instance)
+            .Where(p => (p.PropertyType == typeof(float) || p.PropertyType == typeof(Vector2)) && p.Name is not ("Scale" or "BorderSize"))
+            .ToArray();
+        Assertions.Check(sizes.Length >= 28, $"reflection finds the sizes ({sizes.Length})");
+        foreach (var s in new[] { 1.25f, 1.5f, 2f })
         {
             var m = Metrics.At(s);
-            Assertions.Check(m.WindowRounding == 5 * s && m.ItemSpacing == new Vector2(6, 4) * s && m.ScrollbarSize == 12 * s && m.TitleFade == 24 * s, $"sizes scale at {s}");
-            Assertions.Check(m.BorderSize == 1, $"border stays 1 at {s}");
+            object at1 = Metrics.At(1f), atS = m;
+            var wrong = sizes.Where(p => p.PropertyType == typeof(float)
+                ? (float)p.GetValue(atS)! != (float)p.GetValue(at1)! * s
+                : (Vector2)p.GetValue(atS)! != (Vector2)p.GetValue(at1)! * s).Select(p => p.Name).ToArray();
+            Assertions.Check(wrong.Length == 0, $"every size scales at {s}" + (wrong.Length == 0 ? "" : ": not " + string.Join(", ", wrong)));
+            Assertions.Check(m.BorderSize == 1 && m.Scale == s, $"border stays 1 at {s}");
         }
     }
     static void HeaderWide()   { var r = HeaderLayout.Compute(Input(560)); Assertions.Check(r.ActionsInHeader && !r.ActionsInMenu && r.TitleShown == 120 && r.ShowButtons, "wide: everything shows"); }
@@ -92,10 +102,12 @@ internal static class LayoutScenarios
     static void WidthCache()  // Review Focus 4
     {
         var calls = 0; Func<string, float> measure = s => { calls++; return s.Length * 7f; };
-        var slot = new WidthSlot();
-        slot.Get("Gallery", 17, measure); slot.Get("Gallery", 17, measure); slot.Get(new string("Gallery".ToCharArray()), 17, measure);
-        Assertions.Check(calls == 1, "same text and size measure once");
-        slot.Get("Gallery", 25.5f, measure); Assertions.Check(calls == 2, "a new font size re-measures");
-        slot.Get("Other", 25.5f, measure); Assertions.Check(calls == 3, "new text re-measures");
+        var slot = new WidthSlot(); nint font = 0x1000, other = 0x2000;
+        slot.Get("Gallery", font, 17, measure); slot.Get("Gallery", font, 17, measure); slot.Get(new string("Gallery".ToCharArray()), font, 17, measure);
+        Assertions.Check(calls == 1, "same text, font and size measure once");
+        slot.Get("Gallery", font, 25.5f, measure); Assertions.Check(calls == 2, "a new font size re-measures");
+        slot.Get("Other", font, 25.5f, measure); Assertions.Check(calls == 3, "new text re-measures");
+        slot.Get("Other", other, 25.5f, measure); Assertions.Check(calls == 4, "another font at the same size re-measures");  // final review A-M6
+        slot.Get("Other", other, 25.5f, measure); Assertions.Check(calls == 4, "and then holds");
     }
 }

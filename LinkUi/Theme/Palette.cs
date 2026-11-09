@@ -49,7 +49,7 @@ public sealed record Palette
     public Vector4 Selection { get; init; }
     public Vector4 SelectionText { get; init; }
 
-    /// <summary>Text drawn on the accent: a dark or a light candidate, whichever contrasts more.</summary>
+    /// <summary>Text drawn on the accent: a dark or a light candidate, whichever contrasts more; pure black or white when neither reaches 4.5:1.</summary>
     public Vector4 OnAccent { get; init; }
 
     public Vector4 Success { get; init; }
@@ -70,8 +70,11 @@ public sealed record Palette
     public Vector4 InfoTint { get; init; }
 
     /// <summary>The palette for an accent colour; the accent's alpha is forced to 1.</summary>
+    /// <exception cref="ArgumentException">A component is not finite or is outside [0, 1] (bytes instead of fractions, say).</exception>
     public static Palette From(Vector4 accent)
     {
+        if (!InUnitRange(accent.X) || !InUnitRange(accent.Y) || !InUnitRange(accent.Z) || !InUnitRange(accent.W))
+            throw new ArgumentException($"LinkUi: the accent's components must be finite and in [0, 1], got {accent}.", nameof(accent));
         accent.W = 1f;
         var (l, c, h) = Oklch.ToOklch(accent);
         var hoverL = l + 0.045f > 0.90f ? l - 0.045f : l + 0.045f;
@@ -112,7 +115,7 @@ public sealed record Palette
             AccentMutedBorder = Oklch.FromOklch(0.308f, c * 0.30f, h + 5.7f),
             Selection = Oklch.FromOklch(0.386f, c * 0.45f, h + 2.3f),
             SelectionText = Oklch.FromOklch(0.893f, c * 0.76f, h + 3.6f),
-            OnAccent = Oklch.Contrast(dark, accent) >= Oklch.Contrast(light, accent) ? dark : light,
+            OnAccent = OnAccentFor(accent, dark, light),
             Success = Oklch.Hex("#4dc780"),
             SuccessTint = Oklch.Hex("#12251a"),
             Warning = Oklch.Hex("#f2b33d"),
@@ -127,5 +130,22 @@ public sealed record Palette
             Info = Oklch.Hex("#5aa7e6"),
             InfoTint = Oklch.Hex("#122030"),
         };
+    }
+
+    private static bool InUnitRange(float v) => v is >= 0f and <= 1f;  // false for NaN; infinities fall outside
+
+    /// <summary>
+    /// The tinted candidate that contrasts more; when even that is under 4.5:1 (mid-luminance accents),
+    /// pure black or white, whichever contrasts more.
+    /// </summary>
+    private static Vector4 OnAccentFor(Vector4 accent, Vector4 dark, Vector4 light)
+    {
+        var darkContrast = Oklch.Contrast(dark, accent);
+        var lightContrast = Oklch.Contrast(light, accent);
+        if (Math.Max(darkContrast, lightContrast) >= 4.5f)
+            return darkContrast >= lightContrast ? dark : light;
+        var black = new Vector4(0, 0, 0, 1);
+        var white = new Vector4(1, 1, 1, 1);
+        return Oklch.Contrast(black, accent) >= Oklch.Contrast(white, accent) ? black : white;
     }
 }

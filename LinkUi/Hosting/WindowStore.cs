@@ -17,6 +17,9 @@ internal sealed class WindowStore
 {
     private const float MinOpacity = 0.2f;
 
+    /// <summary>A hand-edited file may keep a trailing comma or a comment; neither sets it aside.</summary>
+    private static readonly JsonDocumentOptions HandEdit = new() { AllowTrailingCommas = true, CommentHandling = JsonCommentHandling.Skip };
+
     private readonly string path;
     private readonly Action<string> log;
     private readonly Dictionary<string, WindowPrefs> windows = new(StringComparer.Ordinal);
@@ -43,7 +46,7 @@ internal sealed class WindowStore
         {
             var bytes = File.ReadAllBytes(path);
             var start = bytes.AsSpan().StartsWith((ReadOnlySpan<byte>)[0xEF, 0xBB, 0xBF]) ? 3 : 0;  // a BOM from a hand edit
-            using var doc = JsonDocument.Parse(bytes.AsMemory(start));
+            using var doc = JsonDocument.Parse(bytes.AsMemory(start), HandEdit);
             if (doc.RootElement.ValueKind != JsonValueKind.Object)
             {
                 store.SetAside("its root is not an object");

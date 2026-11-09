@@ -11,6 +11,8 @@ internal static class PaletteScenarios
         Scenarios.Run(ColourMath);
         Scenarios.Run(AmberMatchesSpec);
         Scenarios.Run(OnAccentContrast);
+        Scenarios.Run(OnAccentGrid);
+        Scenarios.Run(AccentOutOfRange);
         Scenarios.Run(StatesStandApart);
         Scenarios.Run(TextContrast);
         Scenarios.Run(AchromaticAccents);
@@ -47,6 +49,34 @@ internal static class PaletteScenarios
         foreach (var a in OtherAccents.Append("#e0a43a"))
         { var p = Palette.From(Hex(a)); Assertions.Check(Oklch.Contrast(p.OnAccent, p.Accent) >= 4.5f, $"on-accent text on {a} at least 4.5:1"); }
     }
+    static void OnAccentGrid()  // final review A-I1: every accent, not six picked ones
+    {
+        var below = 0; var worst = float.MaxValue; var worstAt = "";
+        for (var r = 0; r < 256; r += 17)
+            for (var g = 0; g < 256; g += 17)
+                for (var b = 0; b < 256; b += 17)
+                {
+                    var p = Palette.From(new Vector4(r / 255f, g / 255f, b / 255f, 1));
+                    var contrast = Oklch.Contrast(p.OnAccent, p.Accent);
+                    if (contrast < 4.5f)
+                        below++;
+                    if (contrast < worst)
+                        (worst, worstAt) = (contrast, $"#{r:x2}{g:x2}{b:x2}");
+                }
+        Assertions.Check(below == 0, $"on-accent text at least 4.5:1 on every step-17 grid accent ({below} below, worst {worst:0.00} at {worstAt})");
+        var amber = Palette.From(Hex("#e0a43a")).OnAccent;
+        Assertions.Check(ToHex(amber) == "#1a1200", $"amber keeps its on-accent colour (got {ToHex(amber)})");
+    }
+    static void AccentOutOfRange()  // final review A-M1
+    {
+        Assertions.Reject(() => Palette.From(new Vector4(float.NaN, 0.5f, 0.5f, 1)), "a NaN accent component is rejected");
+        Assertions.Reject(() => Palette.From(new Vector4(0.5f, float.PositiveInfinity, 0.5f, 1)), "an infinite accent component is rejected");
+        Assertions.Reject(() => Palette.From(new Vector4(224, 164, 58, 1)), "an accent in bytes instead of 0 to 1 is rejected");
+        Assertions.Reject(() => Palette.From(new Vector4(0.5f, 0.5f, -0.01f, 1)), "a negative accent component is rejected");
+        Assertions.Reject(() => Palette.From(new Vector4(0.5f, 0.5f, 0.5f, 255)), "an alpha outside 0 to 1 is rejected");
+        Assertions.Check(Palette.From(new Vector4(0, 1, 0, 0)).Accent.W == 1f, "the ends of the range are accepted");
+    }
+    static string ToHex(Vector4 c) => $"#{(int)MathF.Round(c.X * 255):x2}{(int)MathF.Round(c.Y * 255):x2}{(int)MathF.Round(c.Z * 255):x2}";
     static void StatesStandApart()
     {
         foreach (var a in OtherAccents.Append("#e0a43a"))

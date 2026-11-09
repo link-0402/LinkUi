@@ -20,6 +20,7 @@ internal static class StoreScenarios
             Scenarios.Run(SaveFailure);
             Scenarios.Run(CreatesFolder);
             Scenarios.Run(ByteOrderMark);
+            Scenarios.Run(HandEdits);
             Scenarios.Run(NoSaveAfterFailedRead);
         }
         finally
@@ -89,6 +90,16 @@ internal static class StoreScenarios
         File.WriteAllBytes(path, [0xEF, 0xBB, 0xBF, .. System.Text.Encoding.UTF8.GetBytes("""{ "w": { "pinned": true } }""")]);
         var s = WindowStore.Load(path, _ => { });
         Assertions.Check(s.Get("w").Pinned && !File.Exists(path + ".bad"), "a leading BOM is skipped, not corrupt");
+    }
+    static void HandEdits()  // final review A-M8
+    {
+        var (_, path) = Temp();
+        File.WriteAllText(path, """{ "w": { "opacity": 0.5, "pinned": true, }, }""");
+        var s = WindowStore.Load(path, _ => { });
+        Assertions.Check(s.Get("w") == WindowPrefs.Default with { Opacity = 0.5f, Pinned = true } && !File.Exists(path + ".bad"), "trailing commas are accepted");
+        File.WriteAllText(path, "// my windows\n{ \"w\": { /* half */ \"opacity\": 0.5 } } // end\n");
+        s = WindowStore.Load(path, _ => { });
+        Assertions.Check(s.Get("w").Opacity == 0.5f && !File.Exists(path + ".bad"), "comments are skipped");
     }
     static void NoSaveAfterFailedRead()
     {

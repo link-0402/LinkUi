@@ -41,11 +41,12 @@ public abstract partial class ToolWindow
 
         var buttonSize = ImGui.GetFrameHeight();
         var fontSize = ImGui.GetFontSize();
+        var font = CurrentFont();
         var iconGlyph = host.Options.HeaderIcon is { } icon ? Glyphs.Of(icon) : null;
         var iconSize = iconGlyph != null ? GlyphSize(iconGlyph) : Vector2.Zero;
         var subtitle = Subtitle;
-        var titleFull = titleWidth.Get(title, fontSize, MeasureText);
-        var subtitleFull = string.IsNullOrEmpty(subtitle) ? 0 : subtitleWidth.Get(subtitle, fontSize, MeasureText);
+        var titleFull = titleWidth.Get(title, font, fontSize, MeasureText);
+        var subtitleFull = string.IsNullOrEmpty(subtitle) ? 0 : subtitleWidth.Get(subtitle, font, fontSize, MeasureText);
         var clickThrough = IsClickthrough;
         var pointerGlyph = Glyphs.Of(FontAwesomeIcon.MousePointer);
         var pointerSize = Vector2.Zero;
@@ -53,7 +54,7 @@ public abstract partial class ToolWindow
         if (clickThrough)
         {
             pointerSize = GlyphSize(pointerGlyph);
-            pillWidth = m.PillPadX * 2 + pointerSize.X + m.HeaderGap + pillTextWidth.Get(PillText, fontSize, MeasureText);
+            pillWidth = m.PillPadX * 2 + pointerSize.X + m.HeaderGap + pillTextWidth.Get(PillText, font, fontSize, MeasureText);
         }
         var input = new HeaderInput(width, buttonSize, iconSize.X, iconGlyph != null, titleFull, subtitleFull,
             actionCount, AllowPinning, ShowCloseButton, clickThrough, pillWidth, m);
@@ -255,6 +256,9 @@ public abstract partial class ToolWindow
     }
 
     private static Vector4 Dim(Vector4 colour) => colour with { W = colour.W * DimAlpha };
+
+    /// <summary>The current font's address, so a cached width is measured again when the font changes at the same size.</summary>
+    private static unsafe nint CurrentFont() => (nint)ImGui.GetFont().Handle;
 
     /// <summary>A glyph's size in the icon font.</summary>
     private static Vector2 GlyphSize(string glyph)

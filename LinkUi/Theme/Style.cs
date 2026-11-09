@@ -11,7 +11,7 @@ namespace LinkUi;
 public static class Style
 {
     /// <summary>Every <see cref="ImGuiCol"/> but <c>Count</c>.</summary>
-    internal const int ColourCount = 55;
+    internal const int ColourCount = (int)ImGuiCol.Count;
 
     /// <summary>The style vars <see cref="PushAll"/> pushes.</summary>
     internal const int VarCount = 19;
@@ -82,10 +82,11 @@ public static class Style
         Theme.Current.Palette is { } palette ? CheckCoverage(palette) : "LinkUi has no host, so there is no palette to check.";
 
     /// <summary>
-    /// Starts a chain of pushes popped together on dispose. Bind the end of the chain:
-    /// <c>using var _ = Style.Override().Colour(ImGuiCol.Text, p.Muted);</c>.
+    /// Starts a set of pushes popped together on dispose: <c>using var _ = Style.Override().Colour(ImGuiCol.Text, p.Muted);</c>.
+    /// Calls may be chained or made on the bound value, also conditionally:
+    /// <c>using var o = Style.Override(); if (marked) o.Colour(ImGuiCol.Text, p.Accent);</c>.
     /// </summary>
-    public static StyleOverride Override() => default;
+    public static StyleOverride Override() => new(StyleOverride.Stack.Mark());
 
     private static Vector4[] Build(Palette p, int[]? counts)
     {
@@ -164,38 +165,46 @@ public static class Style
 }
 
 /// <summary>
-/// A chain of style pushes popped together by <see cref="Dispose"/>. Each call pushes and returns a copy
-/// carrying the counts, so only the end of the chain knows them: bind it to the <c>using</c> variable.
+/// Style pushes popped together by <see cref="Dispose"/>. It holds only the mark <see cref="Style.Override"/>
+/// took, and dispose pops back to that mark, so chained, unchained and conditional calls all balance, and
+/// nested overrides unwind in order. Start one with <see cref="Style.Override"/>.
 /// </summary>
-public ref struct StyleOverride
+public readonly ref struct StyleOverride
 {
-    private int colours;
-    private int vars;
+    /// <summary>What every override in this plugin has pushed; each plugin loads its own copy of LinkUi.</summary>
+    internal static readonly OverrideStack Stack = new();
+
+    private readonly (int Colours, int Vars) mark;
+
+    internal StyleOverride((int Colours, int Vars) mark) => this.mark = mark;
 
     public StyleOverride Colour(ImGuiCol col, Vector4 value)
     {
         ImGui.PushStyleColor(col, value);
-        return new StyleOverride { colours = colours + 1, vars = vars };
+        Stack.PushedColour();
+        return this;
     }
 
     public StyleOverride Var(ImGuiStyleVar v, float value)
     {
         ImGui.PushStyleVar(v, value);
-        return new StyleOverride { colours = colours, vars = vars + 1 };
+        Stack.PushedVar();
+        return this;
     }
 
     public StyleOverride Var(ImGuiStyleVar v, Vector2 value)
     {
         ImGui.PushStyleVar(v, value);
-        return new StyleOverride { colours = colours, vars = vars + 1 };
+        Stack.PushedVar();
+        return this;
     }
 
     public void Dispose()
     {
+        var (colours, vars) = Stack.Unwind(mark);
         if (vars > 0)
             ImGui.PopStyleVar(vars);
         if (colours > 0)
             ImGui.PopStyleColor(colours);
-        colours = vars = 0;
     }
 }

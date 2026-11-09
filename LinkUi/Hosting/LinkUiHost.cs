@@ -21,6 +21,9 @@ public sealed class LinkUiHost : IDisposable
     /// <summary>Built once so the frame allocates no delegate.</summary>
     private readonly Action<Action, Exception> onError;
 
+    /// <summary>Built once, like <see cref="onError"/>.</summary>
+    private readonly Action<Action> onSuppressed;
+
     private float scale;
     private bool disposed;
 
@@ -43,7 +46,10 @@ public sealed class LinkUiHost : IDisposable
 #endif
         Windows = WindowStore.Load(Path.Combine(pluginInterface.GetPluginConfigDirectory(), "linkui-windows.json"),
             message => log.Warning("{Message}", message));
-        onError = (_, e) => log.Error(e, "LinkUi: a draw handler failed");
+        // The handler's names are read on the error path only.
+        onError = (h, e) => log.Error(e, "LinkUi: draw handler {Type}.{Method} failed", h.Method.DeclaringType?.Name ?? "?", h.Method.Name);
+        onSuppressed = h => log.Error("LinkUi: draw handler {Type}.{Method} keeps failing; further errors from it are not logged",
+            h.Method.DeclaringType?.Name ?? "?", h.Method.Name);
         drawHook = OnDraw;
         Fonts.Initialize(ui);
         scale = ImGuiHelpers.GlobalScale;
@@ -95,7 +101,7 @@ public sealed class LinkUiHost : IDisposable
         Style.PushAll(colours, in metrics);
         try
         {
-            handlers.InvokeAll(onError);
+            handlers.InvokeAll(onError, onSuppressed);
         }
         finally
         {
