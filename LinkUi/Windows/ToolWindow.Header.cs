@@ -20,13 +20,17 @@ public abstract partial class ToolWindow
     private WidthSlot subtitleWidth;
     private WidthSlot pillTextWidth;
 
+    /// <summary>The left button was down last frame, so only a press that starts over the pill turns click-through off.</summary>
+    private bool leftWasDown;
+
     /// <summary>
     /// Paints the header across the top of the window and draws its buttons. Returns the plugin action
     /// clicked this frame (run by the caller once the header is done); <paramref name="optionsAnchor"/> is
-    /// the top-right corner the options menu opens at.
+    /// the top-right corner the options menu opens at; <paramref name="naturalWidth"/> the width that fits the
+    /// whole header.
     /// </summary>
     private HeaderAction? DrawHeader(Vector2 windowPos, float headerHeight, bool focused, int actionCount,
-        out HeaderResult layout, out Vector2 optionsAnchor)
+        out HeaderResult layout, out Vector2 optionsAnchor, out float naturalWidth)
     {
         var p = Theme.Current.Palette;
         var m = Theme.Current.Metrics;
@@ -51,8 +55,14 @@ public abstract partial class ToolWindow
             pointerSize = GlyphSize(pointerGlyph);
             pillWidth = m.PillPadX * 2 + pointerSize.X + m.HeaderGap + pillTextWidth.Get(PillText, fontSize, MeasureText);
         }
-        layout = HeaderLayout.Compute(new HeaderInput(width, buttonSize, iconSize.X, iconGlyph != null, titleFull, subtitleFull,
-            actionCount, AllowPinning, ShowCloseButton, clickThrough, pillWidth, m));
+        var input = new HeaderInput(width, buttonSize, iconSize.X, iconGlyph != null, titleFull, subtitleFull,
+            actionCount, AllowPinning, ShowCloseButton, clickThrough, pillWidth, m);
+        layout = HeaderLayout.Compute(input);
+        naturalWidth = HeaderLayout.NaturalWidth(input);
+        // Read every frame, so the pill never sees a stale state when it appears.
+        var leftDown = Native.LeftButtonDown();
+        var pressed = leftDown && !leftWasDown;
+        leftWasDown = leftDown;
 
         // Left to right: icon, title, subtitle. Text only, so the empty header still moves the window.
         var centreY = windowPos.Y + headerHeight / 2;
@@ -74,7 +84,7 @@ public abstract partial class ToolWindow
         if (layout.ShowPill)
         {
             DrawPill(drawList, new Vector2(right - layout.PillShown, top), new Vector2(right, top + buttonSize),
-                pointerGlyph, pointerSize, centreY, textY);
+                pointerGlyph, pointerSize, centreY, textY, pressed);
             return null;
         }
         if (!layout.ShowButtons)
@@ -193,15 +203,25 @@ public abstract partial class ToolWindow
             drawList.AddRectFilled(pos, max, ImGui.GetColorU32(held ? p.ControlActive : p.Control), Theme.Current.Metrics.FrameRounding);
         var colour = lit ? (focused ? p.Accent : Dim(p.Accent)) : hovered ? Vector4.One : focused ? p.Glyph : p.Hint;
         CentredGlyph(drawList, glyph, pos, max, colour);
-        Ui.Tooltip(tooltip);
+        // The window's opacity would fade the tooltip too.
+        ImGui.PushStyleVar(ImGuiStyleVar.Alpha, 1f);
+        try
+        {
+            Ui.Tooltip(tooltip);
+        }
+        finally
+        {
+            ImGui.PopStyleVar();
+        }
         return clicked;
     }
 
     /// <summary>
     /// The click-through pill. The window takes no input, so the pill is hit-tested by hand and the button
-    /// read from Win32; a press turns click-through off.
+    /// read from Win32; a press that starts over it turns click-through off.
     /// </summary>
-    private void DrawPill(ImDrawListPtr drawList, Vector2 min, Vector2 max, string pointerGlyph, Vector2 pointerSize, float centreY, float textY)
+    private void DrawPill(ImDrawListPtr drawList, Vector2 min, Vector2 max, string pointerGlyph, Vector2 pointerSize, float centreY, float textY,
+        bool pressed)
     {
         var p = Theme.Current.Palette;
         var m = Theme.Current.Metrics;
@@ -214,7 +234,7 @@ public abstract partial class ToolWindow
             var viewport = ImGui.GetWindowViewport();
             if (viewport.ID != ImGui.GetMainViewport().ID)
                 viewport.Flags &= ~ImGuiViewportFlags.NoInputs;
-            if (Native.LeftButtonDown())
+            if (pressed)
                 IsClickthrough = false;
         }
         if (max.X <= min.X)

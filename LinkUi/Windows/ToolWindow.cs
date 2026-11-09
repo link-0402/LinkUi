@@ -8,6 +8,8 @@ namespace LinkUi;
 /// A Dalamud window with LinkUi's own header instead of the title bar: plugin icon, title, subtitle, the
 /// plugin's <see cref="HeaderActions"/>, then pin, options and close. The window's pin, click-through,
 /// stay-on-top and opacity are kept in the host's window store. Draw the window's body in <see cref="DrawContent"/>.
+/// The stored pin, click-through and stay on top are applied when the window first opens and win over values
+/// set before that, so set them through the window once it has opened.
 /// </summary>
 public abstract partial class ToolWindow : Window
 {
@@ -19,6 +21,8 @@ public abstract partial class ToolWindow : Window
     /// <summary>The outer window always has these: the header replaces the title bar.</summary>
     private const ImGuiWindowFlags Chrome = ImGuiWindowFlags.NoTitleBar | ImGuiWindowFlags.NoCollapse;
 
+    private const ImGuiWindowFlags ScrollFlags = ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse;
+
     private const string ContentId = "##lu-content";
 
     private readonly LinkUiHost host;
@@ -29,6 +33,12 @@ public abstract partial class ToolWindow : Window
     private string title = string.Empty;
     private string storeId = string.Empty;
     private bool prefsApplied;
+
+    /// <summary>The scroll flags PreDraw put on the outer window last frame, so they never count as the consumer's.</summary>
+    private ImGuiWindowFlags forcedScroll;
+
+    /// <summary>The header's natural width this frame, which a self-sizing window keeps room for.</summary>
+    private float headerNaturalWidth;
 
     /// <exception cref="InvalidOperationException">No <see cref="LinkUiHost"/> exists yet.</exception>
     protected ToolWindow(string name, ImGuiWindowFlags flags = ImGuiWindowFlags.None)
@@ -66,12 +76,12 @@ public abstract partial class ToolWindow : Window
     public sealed override void PreDraw()
     {
         // The scroll flags stay on the outer window (the child scrolls), except when it sizes itself.
-        var forced = Chrome;
-        if ((Flags & ImGuiWindowFlags.AlwaysAutoResize) == 0)
-            forced |= ImGuiWindowFlags.NoScrollbar | ImGuiWindowFlags.NoScrollWithMouse;
-        var incoming = Flags & ~forced;
+        // Last frame's forced flags are stripped first, so turning AlwaysAutoResize on or off never moves them into the child.
+        var scroll = (Flags & ImGuiWindowFlags.AlwaysAutoResize) == 0 ? ScrollFlags : ImGuiWindowFlags.None;
+        var incoming = Flags & ~(Chrome | forcedScroll);
         ContentFlags |= incoming & ContentMask;
-        Flags = (incoming & ~ContentMask) | forced;
+        Flags = (incoming & ~ContentMask) | Chrome | scroll;
+        forcedScroll = scroll;
 
         SplitName();
         var prefs = host.Windows.Get(storeId);
@@ -112,7 +122,7 @@ public abstract partial class ToolWindow : Window
         // Read once: the header and the menu index the same count, and clicks run only after both,
         // so a handler that changes the list can't move it under them.
         var actionCount = HeaderActions.Count;
-        var clicked = DrawHeader(windowPos, headerHeight, focused, actionCount, out var layout, out var optionsAnchor);
+        var clicked = DrawHeader(windowPos, headerHeight, focused, actionCount, out var layout, out var optionsAnchor, out headerNaturalWidth);
         clicked = DrawOptions(layout.ActionsInMenu, actionCount, optionsAnchor) ?? clicked;
         clicked?.OnClick();
         // Before the content, so a content exception can't lose a change made in the header or menu.
@@ -123,7 +133,7 @@ public abstract partial class ToolWindow : Window
         try
         {
             if ((Flags & ImGuiWindowFlags.AlwaysAutoResize) != 0)
-                DrawAutoResizeContent(headerHeight, m);
+                DrawAutoResizeContent(windowPos, headerHeight, m);
             else
                 DrawChildContent(windowPos, headerHeight);
         }
@@ -178,8 +188,11 @@ public abstract partial class ToolWindow : Window
         }
     }
 
-    /// <summary>A self-sizing window has no child: the content sits in a group, padded like a child would be.</summary>
-    private void DrawAutoResizeContent(float headerHeight, in Metrics m)
+    /// <summary>
+    /// A self-sizing window has no child: the content sits in a group, padded like a child would be. The window
+    /// fits its content, so a last item keeps the right and bottom padding and the header's natural width.
+    /// </summary>
+    private void DrawAutoResizeContent(Vector2 windowPos, float headerHeight, in Metrics m)
     {
         ImGui.SetCursorPos(new Vector2(m.WindowPadding.X, headerHeight + m.WindowPadding.Y));
         ImGui.BeginGroup();
@@ -190,7 +203,9 @@ public abstract partial class ToolWindow : Window
         finally
         {
             ImGui.EndGroup();
-            ImGui.Dummy(m.WindowPadding);
+            // ImGui truncates the fit width: round up, or the title would clip by a fraction.
+            var right = MathF.Ceiling(MathF.Max(ImGui.GetItemRectMax().X + m.WindowPadding.X, windowPos.X + headerNaturalWidth));
+            ImGui.Dummy(new Vector2(MathF.Max(0, right - ImGui.GetCursorScreenPos().X), m.WindowPadding.Y));
         }
     }
 

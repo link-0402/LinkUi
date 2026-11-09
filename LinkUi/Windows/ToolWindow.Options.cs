@@ -29,7 +29,15 @@ public abstract partial class ToolWindow
         try
         {
             if (!ImGui.BeginPopup(OptionsPopup, ImGuiWindowFlags.NoMove))
+            {
+                // Closed mid-drag (Escape): the slider never saw its drag end, so save here.
+                if (opacityEdited)
+                {
+                    opacityEdited = false;
+                    host.Windows.Save();
+                }
                 return null;
+            }
             try
             {
                 DrawWindowOptions(inMainViewport, m.Scale);

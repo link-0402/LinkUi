@@ -190,6 +190,9 @@ internal sealed partial class GalleryWindow : ToolWindow
         var subtitle = headerSample.ShowSubtitle;
         if (ImGui.Checkbox("Subtitle", ref subtitle))
             headerSample.ShowSubtitle = subtitle;
+        var autoSize = headerSample.AutoSize;
+        if (ImGui.Checkbox("Auto size", ref autoSize))
+            headerSample.AutoSize = autoSize;
         var count = headerSample.ActionCount;
         ImGui.AlignTextToFramePadding();
         ImGui.TextUnformatted("Actions");

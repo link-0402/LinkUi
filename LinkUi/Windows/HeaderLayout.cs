@@ -45,4 +45,21 @@ internal static class HeaderLayout
         var subtitleShown = input.SubtitleWidth > 0 ? Math.Clamp(space - titleShown - m.HeaderGap, 0, input.SubtitleWidth) : 0;
         return new HeaderResult(actionsInHeader, actionsInMenu, titleShown, subtitleShown, showButtons, showPill, pillShown);
     }
+
+    /// <summary>
+    /// The narrowest width at which <see cref="Compute"/> shows the full title and subtitle and keeps every
+    /// plugin action in the header (in click-through mode, the full pill). <see cref="HeaderInput.Width"/> is ignored.
+    /// </summary>
+    public static float NaturalWidth(in HeaderInput input)
+    {
+        var m = input.M;
+        var left = m.HeaderPadLeft + (input.HasIcon ? input.IconWidth + m.HeaderGap : 0);
+        var text = input.TitleWidth + (input.SubtitleWidth > 0 ? m.HeaderGap + input.SubtitleWidth : 0);
+        if (input.ClickThrough)
+            return left + text + m.HeaderGap + input.PillWidth + m.HeaderPadRight;
+        var buttons = (input.ShowPin ? 1 : 0) + 1 + (input.ShowClose ? 1 : 0);
+        var fixedWidth = buttons * input.ButtonSize + (buttons - 1) * m.HeaderButtonGap + m.HeaderPadRight;
+        var actions = input.PluginActions > 0 ? input.PluginActions * (input.ButtonSize + m.HeaderButtonGap) + 2 * m.SeparatorMargin + 1 : 0;
+        return left + text + m.HeaderGap + actions + fixedWidth;
+    }
 }

@@ -37,6 +37,13 @@ internal sealed class HeaderSampleWindow : ToolWindow
         set => Subtitle = value ? SampleSubtitle : null;
     }
 
+    /// <summary>The window sizes itself to its content and header.</summary>
+    public bool AutoSize
+    {
+        get => (Flags & ImGuiWindowFlags.AlwaysAutoResize) != 0;
+        set => Flags = value ? Flags | ImGuiWindowFlags.AlwaysAutoResize : Flags & ~ImGuiWindowFlags.AlwaysAutoResize;
+    }
+
     public int ActionCount => HeaderActions.Count;
 
     /// <summary>Shows the first <paramref name="count"/> sample actions.</summary>

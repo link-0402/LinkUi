@@ -16,6 +16,10 @@ internal static class LayoutScenarios
         Scenarios.Run(HeaderClickThrough);
         Scenarios.Run(HeaderTiny);
         Scenarios.Run(HeaderScaleInvariant);
+        Scenarios.Run(HeaderNaturalWithActions);
+        Scenarios.Run(HeaderNaturalWithoutActions);
+        Scenarios.Run(HeaderNaturalSubtitle);
+        Scenarios.Run(HeaderNaturalClickThrough);
         Scenarios.Run(WindowNames);
         Scenarios.Run(WidthCache);
     }
@@ -40,6 +44,44 @@ internal static class LayoutScenarios
     static void HeaderClickThrough() { var r = HeaderLayout.Compute(Input(560, ct: true)); Assertions.Check(!r.ShowButtons && r.ShowPill && !r.ActionsInHeader && !r.ActionsInMenu, "click-through: only the pill"); }
     static void HeaderTiny() { var r = HeaderLayout.Compute(Input(50, sub: 80)); Assertions.Check(r.TitleShown >= 0 && r.SubtitleShown >= 0 && r.PillShown >= 0, "50 px: no negative widths"); }
     static void HeaderScaleInvariant() { var a = HeaderLayout.Compute(Input(300)); var b = HeaderLayout.Compute(Input(300, scale: 2)); Assertions.Check(a.ActionsInHeader == b.ActionsInHeader && b.TitleShown == a.TitleShown * 2, "same decisions at 200%"); }
+    static void HeaderNaturalWithActions()
+    {
+        var input = Input(0);
+        var natural = HeaderLayout.NaturalWidth(input);
+        Assertions.Check(natural == 342, "natural width with 4 actions is 342");
+        Assertions.Check(Full(input with { Width = natural }, input), "4 actions: nothing folds or clips at the natural width");
+        Assertions.Check(!Full(input with { Width = natural - 1 }, input), "4 actions: one pixel less folds or clips");
+        Assertions.Check(HeaderLayout.NaturalWidth(Input(0, scale: 2)) == natural * 2 - 1, "natural width scales, all but the 1 px separator");
+    }
+    static void HeaderNaturalWithoutActions()
+    {
+        var input = Input(0, actions: 0);
+        var natural = HeaderLayout.NaturalWidth(input);
+        Assertions.Check(natural == 235, "natural width without actions is 235");
+        Assertions.Check(Full(input with { Width = natural }, input), "no actions: nothing clips at the natural width");
+        Assertions.Check(!Full(input with { Width = natural - 1 }, input), "no actions: one pixel less clips");
+    }
+    static void HeaderNaturalSubtitle()
+    {
+        var input = Input(0, sub: 150);
+        var natural = HeaderLayout.NaturalWidth(input);
+        Assertions.Check(Full(input with { Width = natural }, input), "subtitle: nothing folds or clips at the natural width");
+        Assertions.Check(!Full(input with { Width = natural - 1 }, input), "subtitle: one pixel less clips");
+    }
+    static void HeaderNaturalClickThrough()
+    {
+        var input = Input(0, sub: 150, ct: true);
+        var natural = HeaderLayout.NaturalWidth(input);
+        Assertions.Check(HeaderLayout.Compute(input with { Width = natural }).PillShown == 200 && Full(input with { Width = natural }, input), "click-through: the whole pill, title and subtitle fit");
+        Assertions.Check(!Full(input with { Width = natural - 1 }, input), "click-through: one pixel less clips");
+    }
+    /// <summary>Title and subtitle show in full and, when there are actions and no pill, they stay in the header.</summary>
+    static bool Full(in HeaderInput sized, in HeaderInput input)
+    {
+        var r = HeaderLayout.Compute(sized);
+        return r.TitleShown == input.TitleWidth && r.SubtitleShown == input.SubtitleWidth
+            && (input.ClickThrough || input.PluginActions == 0 || r.ActionsInHeader);
+    }
     static void WindowNames()  // Review Focus 2
     {
         Assertions.Check(WindowText.Title("Instant Edit###ie-main") == "Instant Edit" && WindowText.Id("Instant Edit###ie-main") == "ie-main", "### name");
