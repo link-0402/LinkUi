@@ -79,8 +79,16 @@ public static partial class Ui
         var clicked = Hit(label, ButtonSize(visible, null), enabled, out var hovered, out var held);
         if (!enabled)
         {
-            Frame(DisabledFill(p), p.Border);
-            Content(visible, null, p.Disabled);
+            if (on)
+            {
+                Frame(p.Selection with { W = p.Selection.W * 0.55f }, p.AccentMutedBorder);
+                Content(visible, null, p.SelectionText with { W = p.SelectionText.W * 0.45f });
+            }
+            else
+            {
+                Frame(DisabledFill(p), p.Border);
+                Content(visible, null, p.Disabled);
+            }
             return false;
         }
         if (clicked)

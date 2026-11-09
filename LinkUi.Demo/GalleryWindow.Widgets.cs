@@ -81,6 +81,9 @@ internal sealed partial class GalleryWindow
         ImGui.SameLine();
         var forcedOff = false;
         Ui.ToggleButton("Loop##w-toggle-off", ref forcedOff, false);
+        ImGui.SameLine();
+        var disabledOn = true;
+        Ui.ToggleButton("Loop##w-toggle-on-off", ref disabledOn, false);
 
         Ui.SectionHeader("Badges and status");
         Ui.Badge("Mod", p.Success);
