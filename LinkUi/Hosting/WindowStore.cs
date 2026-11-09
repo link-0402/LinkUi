@@ -22,6 +22,9 @@ internal sealed class WindowStore
     private readonly Dictionary<string, WindowPrefs> windows = new(StringComparer.Ordinal);
     private bool saveFailureLogged;
 
+    /// <summary>The file exists but couldn't be read: saving would overwrite it with only this session's windows.</summary>
+    private bool readFailed;
+
     private WindowStore(string path, Action<string> log)
     {
         this.path = path;
@@ -38,7 +41,9 @@ internal sealed class WindowStore
             return store;
         try
         {
-            using var doc = JsonDocument.Parse(File.ReadAllBytes(path));
+            var bytes = File.ReadAllBytes(path);
+            var start = bytes.AsSpan().StartsWith((ReadOnlySpan<byte>)[0xEF, 0xBB, 0xBF]) ? 3 : 0;  // a BOM from a hand edit
+            using var doc = JsonDocument.Parse(bytes.AsMemory(start));
             if (doc.RootElement.ValueKind != JsonValueKind.Object)
             {
                 store.SetAside("its root is not an object");
@@ -56,6 +61,7 @@ internal sealed class WindowStore
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException)
         {
+            store.readFailed = true;
             log($"LinkUi: could not read {path}, using defaults: {e.Message}");
         }
         return store;
@@ -74,9 +80,14 @@ internal sealed class WindowStore
         IsDirty = true;
     }
 
-    /// <summary>Writes the file through <c>.tmp</c>; false on failure, logged once until a save succeeds.</summary>
+    /// <summary>
+    /// Writes the file through <c>.tmp</c>; false on failure, logged once until a save succeeds.
+    /// After a failed read it never writes and returns false (the read failure was already logged).
+    /// </summary>
     public bool Save()
     {
+        if (readFailed)
+            return false;
         var tmp = path + ".tmp";
         try
         {

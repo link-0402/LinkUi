@@ -31,12 +31,12 @@ internal static class Oklch
     {
         var (l, a, b) = Lab(srgb);
         var c = Math.Sqrt(a * a + b * b);
-        var h = c < 1e-6 ? 0 : Math.Atan2(b, a) * 180 / Math.PI;
+        var h = c < 1e-6 ? 0f : (float)(Math.Atan2(b, a) * 180 / Math.PI);
         if (h < 0)
-            h += 360;
-        if (h >= 360)
-            h -= 360;
-        return ((float)l, (float)c, (float)h);
+            h += 360f;
+        if (h >= 360f)  // after the float add, so a hue just under 360 can't come back as 360f
+            h -= 360f;
+        return ((float)l, (float)c, h);
     }
 
     /// <summary>

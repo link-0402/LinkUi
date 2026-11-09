@@ -19,6 +19,8 @@ internal static class StoreScenarios
             Scenarios.Run(StaleTemp);
             Scenarios.Run(SaveFailure);
             Scenarios.Run(CreatesFolder);
+            Scenarios.Run(ByteOrderMark);
+            Scenarios.Run(NoSaveAfterFailedRead);
         }
         finally
         {
@@ -81,4 +83,23 @@ internal static class StoreScenarios
         Assertions.Check(!s.Save() && !s.Save() && logs == 1, "unwritable path: false twice, no throw, one log line");
     }
     static void CreatesFolder() { var (dir, _) = Temp(); var path = Path.Combine(dir, "new", "linkui-windows.json"); var s = WindowStore.Load(path, _ => { }); s.Set("w", WindowPrefs.Default with { Pinned = true }); Assertions.Check(s.Save() && File.Exists(path), "save creates the folder"); }
+    static void ByteOrderMark()
+    {
+        var (_, path) = Temp();
+        File.WriteAllBytes(path, [0xEF, 0xBB, 0xBF, .. System.Text.Encoding.UTF8.GetBytes("""{ "w": { "pinned": true } }""")]);
+        var s = WindowStore.Load(path, _ => { });
+        Assertions.Check(s.Get("w").Pinned && !File.Exists(path + ".bad"), "a leading BOM is skipped, not corrupt");
+    }
+    static void NoSaveAfterFailedRead()
+    {
+        var (_, path) = Temp(); File.WriteAllText(path, """{ "a": { "pinned": true } }"""); var before = File.ReadAllBytes(path);
+        var logs = 0; WindowStore s;
+        using (new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            s = WindowStore.Load(path, _ => logs++);
+            Assertions.Check(s.Get("a") == WindowPrefs.Default && logs == 1, "locked file: defaults, one log line");
+        }
+        s.Set("w", WindowPrefs.Default with { Pinned = true });
+        Assertions.Check(!s.Save() && File.ReadAllBytes(path).AsSpan().SequenceEqual(before) && logs == 1, "after a failed read, save writes nothing");
+    }
 }
