@@ -24,6 +24,14 @@ internal sealed class AllocationProbe
         recorded++;
     }
 
+    /// <summary>Forgets every frame, so the next reading waits out the warmup again.</summary>
+    public void Reset()
+    {
+        Array.Clear(recent);
+        next = 0;
+        recorded = 0;
+    }
+
     /// <summary>Null until <c>warmup + window</c> frames are recorded; then the largest of the last <c>window</c>.</summary>
     public long? Max
     {

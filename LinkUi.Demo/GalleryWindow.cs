@@ -13,7 +13,11 @@ namespace LinkUi.Demo;
 internal sealed partial class GalleryWindow : Window
 {
     /// <summary>One call per custom widget; the allocation probe times this batch every frame.</summary>
-    internal static readonly Action[] Batch = [];
+    internal static readonly Action[] Batch =
+    [
+        BatchPrimary, BatchDanger, BatchIcon, BatchGhost, BatchToggle, BatchTooltip, BatchBadge, BatchStatusDot,
+        BatchBanner, BatchEmptyState, BatchSpinner, BatchHint, BatchHintWrapped, BatchMuted, BatchSectionHeader, BatchPropertyRow,
+    ];
 
     /// <summary>The bare-button baseline: as many buttons as <see cref="Batch"/> has calls. Declared after it.</summary>
     private static readonly string[] BaselineLabels = MakeBaselineLabels(Batch.Length);
@@ -47,6 +51,9 @@ internal sealed partial class GalleryWindow : Window
 
     public override void OnOpen()
     {
+        widgetsProbe.Reset();
+        baselineProbe.Reset();
+        framesSinceLog = 0;
         selfTestProblem = Style.SelfTest();
         selfTestPassed = selfTestProblem == null;
         selfTestLine = selfTestPassed ? "Style table: PASS" : "Style table: FAIL";
@@ -62,6 +69,7 @@ internal sealed partial class GalleryWindow : Window
         DrawAllocations();
         DrawTokens();
         DrawFonts();
+        DrawWidgetsSection();
         DrawBuiltinsSection();
     }
 
@@ -118,7 +126,7 @@ internal sealed partial class GalleryWindow : Window
         {
             framesSinceLog = 0;
             var widgetsValue = Batch.Length == 0 ? "none" : wm.ToString();
-            log.Information($"[LinkUi.Demo] alloc widgets={widgetsValue} baseline={bm} bytes/frame");
+            log.Information("[LinkUi.Demo] alloc widgets={Widgets:l} baseline={Baseline} bytes/frame", widgetsValue, bm);
         }
     }
 

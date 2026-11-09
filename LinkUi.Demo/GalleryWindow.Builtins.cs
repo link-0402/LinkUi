@@ -139,7 +139,7 @@ internal sealed partial class GalleryWindow
 
         ImGui.SameLine();
         ImGui.Button("Hover for a tooltip");
-        if (ImGui.IsItemHovered())
+        if (ImGui.IsItemHovered(ImGuiHoveredFlags.AllowWhenDisabled))
             ImGui.SetTooltip("A tooltip.");
 
         ImGui.ProgressBar(0.6f, ProgressSize, "60%");
