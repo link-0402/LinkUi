@@ -18,7 +18,7 @@ One `LinkUiHost` per plugin. `LinkUi.Demo/DemoPlugin.cs` is a working example.
 
 1. Create the host first, before any window: `new LinkUiHost(pluginInterface, log, new LinkUiOptions(accent, FontAwesomeIcon.Palette))`. The icon is optional and shows in every header.
 2. Route every `UiBuilder.Draw` handler through the host: `host.Draw += windowSystem.Draw` instead of `UiBuilder.Draw +=`. Only what draws through `host.Draw` gets the style.
-3. Dispose the host last, after removing the handlers and windows.
+3. Dispose the host from the plugin's `Dispose`, last, after removing the handlers and windows.
 
 ## ToolWindow
 
@@ -26,8 +26,9 @@ Subclass `ToolWindow` instead of Dalamud's `Window` and draw the body in `DrawCo
 
 - `Subtitle`: muted text after the title, such as the open file; null for none.
 - `HeaderActions`: the plugin's header buttons, as `HeaderAction(icon, tooltip, onClick, lit)`. They move into the options menu when the window is narrow.
-- `ContentFlags`: menu bar and scroll flags for the content area. Content flags set on `Flags` move here on the next frame.
+- `ContentFlags`: menu bar and scroll flags for the content area. Content flags set on `Flags` move here on the next frame, except `NoScrollbar` and `NoScrollWithMouse`, which stay on the outer window; with `AlwaysAutoResize` there's no content area and `ContentFlags` is ignored.
 - `OnPreDraw()` and `OnPostDraw()` replace `PreDraw` and `PostDraw`, which `ToolWindow` seals.
+- Dalamud's `TitleBarButtons` and its own window options menu (opacity, blur override) don't show on a `ToolWindow`.
 
 The header shows the host's icon, the title (the window name before `##`), the subtitle, the plugin actions, then pin, options and close. The options menu holds Pin window, Make click-through, Stay on top and Opacity. While click-through is on, a pill in the header turns it off when clicked.
 
@@ -35,7 +36,7 @@ Pin, click-through, stay on top and opacity are saved per window id (the name af
 
 ## Widgets
 
-All in the static `Ui` class unless noted.
+All in the static `Ui` class unless noted. Widgets need the host: call them only from inside `host.Draw`.
 
 | Widget | What it is |
 |---|---|
@@ -66,6 +67,5 @@ Colours are on `Theme.Current.Palette` and sizes on `Theme.Current.Metrics`. For
 ## Known limits
 
 - ImGui's `Header*` colours stay grey, so selected selectables, table rows and collapsing headers are grey, not the accent.
-- With a mid-grey accent, on-accent text can't reach 4.5:1 contrast.
 - Plain `ImGui.SetTooltip` keeps the popup colour; use `Ui.Tooltip` for the tooltip colours.
-- A `ToolWindow` with `AlwaysAutoResize` slides narrower a few pixels a frame when its width drops, instead of snapping.
+- Style vars the host doesn't push follow the user's Dalamud style: `DisabledAlpha`, `ButtonTextAlign`, `SelectableTextAlign`, `TabBorderSize`, `WindowMinSize` and `SeparatorTextBorderSize`.
