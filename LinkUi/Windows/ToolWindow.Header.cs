@@ -32,12 +32,38 @@ public abstract partial class ToolWindow
     private HeaderAction? DrawHeader(Vector2 windowPos, float headerHeight, bool focused, int actionCount,
         out HeaderResult layout, out Vector2 optionsAnchor, out float naturalWidth)
     {
+        var window = ImGuiP.GetCurrentWindow();
+        // The header's buttons stay out of the window's fit: in this ImGui build SetCursorScreenPos extends
+        // CursorMaxPos itself, so both are saved before the first one and put back however the header ends.
+        var cursorMax = window.DC.CursorMaxPos;
+        var idealMax = window.DC.IdealMaxPos;
+        // The whole window inside its border, whatever its padding: the clip a window with no padding has.
+        var border = window.WindowBorderSize;
+        var size = ImGui.GetWindowSize();
+        var clipMin = new Vector2(MathF.Floor(windowPos.X + border + 0.5f), MathF.Floor(windowPos.Y + border + 0.5f));
+        var clipMax = new Vector2(MathF.Floor(windowPos.X + size.X - border + 0.5f), MathF.Floor(windowPos.Y + size.Y - border + 0.5f));
+        ImGui.PushClipRect(clipMin, clipMax, false);
+        try
+        {
+            return DrawHeaderItems(windowPos, headerHeight, focused, actionCount, window.WindowRounding, out layout, out optionsAnchor, out naturalWidth);
+        }
+        finally
+        {
+            ImGui.PopClipRect();
+            window.DC.CursorMaxPos = cursorMax;
+            window.DC.IdealMaxPos = idealMax;
+        }
+    }
+
+    private HeaderAction? DrawHeaderItems(Vector2 windowPos, float headerHeight, bool focused, int actionCount, float rounding,
+        out HeaderResult layout, out Vector2 optionsAnchor, out float naturalWidth)
+    {
         var p = Theme.Current.Palette;
         var m = Theme.Current.Metrics;
         var width = ImGui.GetWindowWidth();
         var headerMax = windowPos + new Vector2(width, headerHeight);
         var drawList = ImGui.GetWindowDrawList();
-        PaintHeader(drawList, windowPos, headerMax, focused);
+        PaintHeader(drawList, windowPos, headerMax, focused, rounding);
 
         var buttonSize = ImGui.GetFrameHeight();
         var fontSize = ImGui.GetFontSize();
@@ -138,21 +164,24 @@ public abstract partial class ToolWindow
         return clicked;
     }
 
-    /// <summary>The header fill with the window's top rounding, the line under it and, when focused, the accent strip.</summary>
-    private static void PaintHeader(ImDrawListPtr drawList, Vector2 min, Vector2 max, bool focused)
+    /// <summary>
+    /// The header fill with the window's top rounding, the line under it and, when focused, the accent strip.
+    /// <paramref name="rounding"/> is the window's own: 0 where ImGui draws it square (docked, or in a viewport of its own).
+    /// </summary>
+    private static void PaintHeader(ImDrawListPtr drawList, Vector2 min, Vector2 max, bool focused, float rounding)
     {
         var p = Theme.Current.Palette;
         var m = Theme.Current.Metrics;
-        drawList.AddRectFilled(min, max, ImGui.GetColorU32(p.Header), m.WindowRounding, ImDrawFlags.RoundCornersTop);
+        drawList.AddRectFilled(min, max, ImGui.GetColorU32(p.Header), rounding, ImDrawFlags.RoundCornersTop);
         drawList.AddRectFilled(new Vector2(min.X, max.Y - 1), max, ImGui.GetColorU32(p.WindowBorder));
         if (!focused)
             return;
-        // The window's clip rect leaves out the border row; the strip shows FocusLine high under it, and
+        // The header's clip rect leaves out the border row; the strip shows FocusLine high under it, and
         // drawing the whole rounded header through a clip keeps the strip inside the rounded corners.
         drawList.PushClipRect(min, new Vector2(max.X, min.Y + m.BorderSize + m.FocusLine), true);
         try
         {
-            drawList.AddRectFilled(min, max, ImGui.GetColorU32(p.Accent), m.WindowRounding, ImDrawFlags.RoundCornersTop);
+            drawList.AddRectFilled(min, max, ImGui.GetColorU32(p.Accent), rounding, ImDrawFlags.RoundCornersTop);
         }
         finally
         {

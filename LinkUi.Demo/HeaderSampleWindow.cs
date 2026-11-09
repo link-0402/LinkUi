@@ -15,6 +15,10 @@ internal sealed class HeaderSampleWindow : ToolWindow
 
     private readonly HeaderAction[] actions;
     private bool resizePending;
+    private float fill = 0.5f;
+
+    /// <summary>Allocation start of this frame's draw, read at the end of PreDraw.</summary>
+    private long drawStart;
 
     public HeaderSampleWindow(IPluginLog log)
         : base("Header sample###linkui-header-sample")
@@ -46,6 +50,11 @@ internal sealed class HeaderSampleWindow : ToolWindow
 
     public int ActionCount => HeaderActions.Count;
 
+    /// <summary>Bytes allocated per frame from the end of PreDraw to PostDraw: Begin, the header, the options menu, the content and End.</summary>
+    public AllocationProbe DrawProbe { get; } = new();
+
+    public override void OnOpen() => DrawProbe.Reset();
+
     /// <summary>Shows the first <paramref name="count"/> sample actions.</summary>
     public void SetActionCount(int count)
     {
@@ -62,10 +71,16 @@ internal sealed class HeaderSampleWindow : ToolWindow
     {
         Ui.Muted("Resize the window to fold the actions into the options menu.");
         ImGui.TextUnformatted(ShowSubtitle ? "Subtitle: on" : "Subtitle: off");
+        // A row that fills the width: with Auto size on, the window must hold its width, not creep wider.
+        Ui.PropertyRow("Fill row");
+        Ui.Slider("##hs-fill", ref fill, 0, 1);
     }
+
+    protected override void OnPreDraw() => drawStart = GC.GetAllocatedBytesForCurrentThread();
 
     protected override void OnPostDraw()
     {
+        DrawProbe.Record(GC.GetAllocatedBytesForCurrentThread() - drawStart);
         // Dalamud applied the size during this frame's Begin: from now on the user's size stays.
         if (!resizePending)
             return;

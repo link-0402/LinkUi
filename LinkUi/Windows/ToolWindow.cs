@@ -55,8 +55,9 @@ public abstract partial class ToolWindow : Window
     public List<HeaderAction> HeaderActions { get; } = new();
 
     /// <summary>
-    /// Flags for the content child (menu bar and scrolling). Content flags added to <c>Flags</c> later move
-    /// here on the next frame; remove them here.
+    /// Flags for the content child (menu bar and scrolling); remove them here. Content flags added to <c>Flags</c>
+    /// later move here on the next frame, except <c>NoScrollbar</c> and <c>NoScrollWithMouse</c>, which stay on the
+    /// outer window. A window with <c>AlwaysAutoResize</c> has no content child, so these are ignored there.
     /// </summary>
     public ImGuiWindowFlags ContentFlags { get; set; }
 
@@ -68,7 +69,7 @@ public abstract partial class ToolWindow : Window
     {
     }
 
-    /// <summary>Runs at the start of <see cref="PostDraw"/>, after the window ends.</summary>
+    /// <summary>Runs in <see cref="PostDraw"/>, after the window ends and the window's own style pushes are popped.</summary>
     protected virtual void OnPostDraw()
     {
     }
@@ -95,7 +96,10 @@ public abstract partial class ToolWindow : Window
         }
 
         ImGui.PushStyleVar(ImGuiStyleVar.Alpha, prefs.Opacity);
-        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, Vector2.Zero);
+        // A self-sizing window keeps its real padding, so ImGui's fit adds it on both sides and a row that
+        // fills the content region fits exactly; otherwise the content child pads itself.
+        var autoSize = (Flags & ImGuiWindowFlags.AlwaysAutoResize) != 0;
+        ImGui.PushStyleVar(ImGuiStyleVar.WindowPadding, autoSize ? Theme.Current.Metrics.WindowPadding : Vector2.Zero);
         ImGui.PushStyleColor(ImGuiCol.Border, Theme.Current.Palette.WindowBorder);
         try
         {
@@ -146,14 +150,9 @@ public abstract partial class ToolWindow : Window
 
     public sealed override void PostDraw()
     {
-        try
-        {
-            OnPostDraw();
-        }
-        finally
-        {
-            PopPreDraw();
-        }
+        // Pops can't throw, so popping first keeps the stack safe and the consumer's code runs outside our pushes.
+        PopPreDraw();
+        OnPostDraw();
     }
 
     private static void PopPreDraw()
@@ -189,8 +188,8 @@ public abstract partial class ToolWindow : Window
     }
 
     /// <summary>
-    /// A self-sizing window has no child: the content sits in a group, padded like a child would be. The window
-    /// fits its content, so a last item keeps the right and bottom padding and the header's natural width.
+    /// A self-sizing window has no child: the content sits in a group under the header, inside the window's
+    /// own padding, which ImGui's fit adds back on every side. A last item keeps room for the header's natural width.
     /// </summary>
     private void DrawAutoResizeContent(Vector2 windowPos, float headerHeight, in Metrics m)
     {
@@ -203,9 +202,13 @@ public abstract partial class ToolWindow : Window
         finally
         {
             ImGui.EndGroup();
-            // ImGui truncates the fit width: round up, or the title would clip by a fraction.
-            var right = MathF.Ceiling(MathF.Max(ImGui.GetItemRectMax().X + m.WindowPadding.X, windowPos.X + headerNaturalWidth));
-            ImGui.Dummy(new Vector2(MathF.Max(0, right - ImGui.GetCursorScreenPos().X), m.WindowPadding.Y));
+            // The fit is the content width, truncated, plus both paddings: the content reaches the natural width
+            // less both paddings, rounded up, plus half a pixel so the float sum can't truncate a pixel short.
+            var start = windowPos.X + ImGui.GetCursorStartPos().X;
+            var right = start + MathF.Ceiling(headerNaturalWidth - 2 * m.WindowPadding.X) + 0.5f;
+            // On the group's line with no height, so it widens the fit without adding a row below the content.
+            ImGui.SameLine(0, 0);
+            ImGui.Dummy(new Vector2(MathF.Max(0, right - ImGui.GetCursorScreenPos().X), 0));
         }
     }
 
@@ -213,7 +216,7 @@ public abstract partial class ToolWindow : Window
     private void SplitName()
     {
         var name = WindowName;
-        if (ReferenceEquals(name, splitName))
+        if (string.Equals(name, splitName, StringComparison.Ordinal))  // a name rebuilt every frame with the same text splits once
             return;
         splitName = name;
         title = WindowText.Title(name);

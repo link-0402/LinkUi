@@ -38,7 +38,12 @@ internal sealed partial class GalleryWindow : ToolWindow
     private long? shownBaseline;
     private string widgetsText = "Widgets: measuring";
     private string baselineText = "Bare buttons: measuring";
+    private long? shownHeader;
+    private bool headerShownOpen;
+    private string headerText = HeaderClosed;
     private int framesSinceLog;
+
+    private const string HeaderClosed = "Header sample window: open it to measure";
 
     private Palette? tokensPalette;
     private Token[] tokens = [];
@@ -128,14 +133,24 @@ internal sealed partial class GalleryWindow : ToolWindow
             shownBaseline = baseline;
             baselineText = baseline is { } b ? $"Bare buttons: {b} bytes/frame" : "Bare buttons: measuring";
         }
+        // The header sample's whole window draw, measured by the sample itself; null while it's closed or warming up.
+        var header = headerSample.IsOpen ? headerSample.DrawProbe.Max : null;
+        if (header != shownHeader || (header == null && headerSample.IsOpen != headerShownOpen))
+        {
+            shownHeader = header;
+            headerShownOpen = headerSample.IsOpen;
+            headerText = header is { } h ? $"Header sample window: {h} bytes/frame" : headerShownOpen ? "Header sample window: measuring" : HeaderClosed;
+        }
         ImGui.TextUnformatted(widgetsText);
         ImGui.TextUnformatted(baselineText);
+        ImGui.TextUnformatted(headerText);
 
         if (widgets is { } wm && baseline is { } bm && ++framesSinceLog >= LogEvery)
         {
             framesSinceLog = 0;
             var widgetsValue = Batch.Length == 0 ? "none" : wm.ToString();
-            log.Information("alloc widgets={Widgets:l} baseline={Baseline} bytes/frame", widgetsValue, bm);
+            var headerValue = header is { } hm ? hm.ToString() : headerSample.IsOpen ? "measuring" : "closed";
+            log.Information("alloc widgets={Widgets:l} baseline={Baseline} header={Header:l} bytes/frame", widgetsValue, bm, headerValue);
         }
     }
 
