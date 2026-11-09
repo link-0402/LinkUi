@@ -33,6 +33,18 @@ internal static class StringScenarios
             var lines = EllipsisScan.Find(File.ReadAllText(file));
             Assertions.Check(lines.Count == 0, $"no ellipsis in {Path.GetFileName(file)} (lines {string.Join(",", lines)})");
         }
+
+        // The demo's strings reach ImGui too.
+        var demo = Path.Combine(root, "LinkUi.Demo");
+        if (!Directory.Exists(demo))
+            return;
+        foreach (var file in Directory.EnumerateFiles(demo, "*.cs", SearchOption.AllDirectories))
+        {
+            if (file.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
+                || file.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}")) continue;
+            var lines = EllipsisScan.Find(File.ReadAllText(file));
+            Assertions.Check(lines.Count == 0, $"no ellipsis in LinkUi.Demo/{Path.GetFileName(file)} (lines {string.Join(",", lines)})");
+        }
     }
 
     /// <summary>The folder holding <c>LinkUi/LinkUi.csproj</c>, walking up from the test exe.</summary>

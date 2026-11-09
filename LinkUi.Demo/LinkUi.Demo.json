@@ -1,0 +1,11 @@
+{
+    "Author": "Luci_xiv",
+    "Name": "LinkUi Demo",
+    "Punchline": "Every LinkUi widget and window state in one place.",
+    "Description": "A gallery for checking the LinkUi look in game.",
+    "InternalName": "LinkUi.Demo",
+    "ApplicableVersion": "any",
+    "Tags": [
+        "dev"
+    ]
+}
