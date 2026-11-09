@@ -1,9 +1,10 @@
+using System.Numerics;
 using Dalamud.Bindings.ImGui;
 using Dalamud.Interface;
 
 namespace LinkUi.Demo;
 
-/// <summary>LinkUi's own widgets, part 1: at rest, in each forced state, and once each in the allocation batch.</summary>
+/// <summary>LinkUi's own widgets, parts 1 and 2: at rest, in each forced state, and once each in the allocation batch.</summary>
 internal sealed partial class GalleryWindow
 {
     private const string EmptyHint = "Mods you open show their items here. Drop a modpack on the window or pick one from the list.";
@@ -15,7 +16,34 @@ internal sealed partial class GalleryWindow
     private int collectionIndex;
     private float tileSize = 1f;
 
+    private static readonly string[] TabItems = ["Model", "Textures", "Physics"];
+
+    /// <summary>Tab labels whose counts change each second, made once so the strip's text changes without allocating.</summary>
+    private static readonly string[][] CountingTabs = MakeCountingTabs(10);
+
+    private int tabLive;
+    private int tabCounting;
+    private float sliderLive = 0.35f;
+    private float sliderAngle = 45f;
+    private bool chipLive = true;
+    private string searchLive = string.Empty;
+    private int comboLive;
+    private float splitLeft = 200f;
+
     private static bool batchToggle;
+    private static int batchTab;
+    private static float batchSlider = 0.5f;
+    private static string batchSearch = string.Empty;
+    private static int batchCombo;
+    private static float batchSplit = 50f;
+
+    private static string[][] MakeCountingTabs(int count)
+    {
+        var sets = new string[count][];
+        for (var i = 0; i < count; i++)
+            sets[i] = ["Mods " + i, "Items " + (i * 3), "Errors " + (count - i)];
+        return sets;
+    }
 
     private void DrawWidgetsSection()
     {
@@ -106,6 +134,74 @@ internal sealed partial class GalleryWindow
         Ui.EmptyState(FontAwesomeIcon.FolderOpen, "No mods open", EmptyHint);
     }
 
+    private void DrawWidgetsPart2Section()
+    {
+        SectionTitle("LinkUi widgets (part 2)");
+        var p = Theme.Current.Palette;
+        if (p == null)
+        {
+            ImGui.TextUnformatted("No palette: LinkUi has no host.");
+            return;
+        }
+        var scale = Theme.Current.Metrics.Scale;
+
+        Ui.SectionHeader("Tab strip", "live, then labels that change each second");
+        Ui.TabStrip("w-tabs", TabItems, ref tabLive);
+        var second = (int)ImGui.GetTime() % CountingTabs.Length;
+        Ui.TabStrip("w-tabs-counting", CountingTabs[second], ref tabCounting);
+
+        Ui.SectionHeader("Fill slider", "live, format, disabled");
+        Ui.PropertyRow("Strength");
+        Ui.Slider("##w-slider", ref sliderLive, 0f, 1f);
+        Ui.PropertyRow("Angle");
+        Ui.Slider("##w-slider-angle", ref sliderAngle, -180f, 180f, "0");
+        Ui.PropertyRow("Locked");
+        var locked = 0.4f;
+        Ui.Slider("##w-slider-off", ref locked, 0f, 1f, "0.00", false);
+
+        Ui.SectionHeader("Chips", "live, selected, swatches");
+        if (Ui.Chip("All##w-chip", 12, chipLive))
+            chipLive = !chipLive;
+        ImGui.SameLine();
+        Ui.Chip("Selected##w-chip-on", 4, true);
+        ImGui.SameLine();
+        Ui.Chip("Errors##w-chip-dot", 2, false, p.Error);
+        ImGui.SameLine();
+        Ui.Chip("Mixed##w-chip-pie", 7, false, p.Error, p.Success, p.Info);
+
+        Ui.SectionHeader("Search box", "Ctrl+F focuses it");
+        Ui.SearchBox("##w-search", ref searchLive, "Search mods");
+
+        Ui.SectionHeader("Wheel combo", "Ctrl + wheel steps through it");
+        Ui.PropertyRow("Collection##w-combo-row");
+        Ui.Combo("##w-combo", ref comboLive, CollectionItems);
+
+        Ui.SectionHeader("Splitter", "between two panes");
+        var height = 80 * scale;
+        var total = ImGui.GetContentRegionAvail().X;
+        var maxLeft = Math.Max(60 * scale, total - 60 * scale - Theme.Current.Metrics.SplitterHit);
+        splitLeft = Math.Clamp(splitLeft, 60 * scale, maxLeft);
+        DrawPane("w-pane-left", new Vector2(splitLeft, height), "Left pane");
+        ImGui.SameLine(0, 0);
+        Ui.Splitter("w-splitter", ref splitLeft, 60 * scale, maxLeft, height);
+        ImGui.SameLine(0, 0);
+        DrawPane("w-pane-right", new Vector2(0, height), "Right pane");
+    }
+
+    private static void DrawPane(string id, Vector2 size, string text)
+    {
+        var open = ImGui.BeginChild(id, size, true);
+        try
+        {
+            if (open)
+                Ui.Muted(text);
+        }
+        finally
+        {
+            ImGui.EndChild();
+        }
+    }
+
     // The allocation batch: one call per widget, constant arguments, state in static fields.
     private static void BatchPrimary() => Ui.PrimaryButton("Primary##batch-primary", FontAwesomeIcon.Cube);
     private static void BatchDanger() => Ui.DangerButton("Danger##batch-danger");
@@ -129,4 +225,11 @@ internal sealed partial class GalleryWindow
         Ui.PropertyRow("Property##batch-property");
         Ui.Muted("value");
     }
+
+    private static void BatchTabStrip() => Ui.TabStrip("batch-tabs", TabItems, ref batchTab);
+    private static void BatchSlider() => Ui.Slider("##batch-slider", ref batchSlider, 0f, 1f);
+    private static void BatchChip() => Ui.Chip("Chip##batch-chip", 3, false, Theme.Current.Palette.Info);
+    private static void BatchSearchBox() => Ui.SearchBox("##batch-search", ref batchSearch, "Search");
+    private static void BatchCombo() => Ui.Combo("##batch-combo", ref batchCombo, CollectionItems);
+    private static void BatchSplitter() => Ui.Splitter("batch-splitter", ref batchSplit, 0f, 100f, 20f, false);
 }

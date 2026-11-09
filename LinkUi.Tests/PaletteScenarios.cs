@@ -32,10 +32,15 @@ internal static class PaletteScenarios
         var p = Palette.From(Hex("#e0a43a"));
         (Vector4 Got, string Want, string Name)[] derived = [(p.AccentHovered, "#ebb455", "hover"), (p.AccentPressed, "#c98f2a", "pressed"),
             (p.AccentMuted, "#4a3a1c", "muted"), (p.Selection, "#55401a", "selection"), (p.SelectionText, "#ffd58a", "selection text"), (p.OnAccent, "#1a1200", "on accent"),
-            (p.AccentMutedBorder, "#3a2e16", "muted border"), (p.DangerBorder, "#2a1515", "danger border")];
+            (p.AccentMutedBorder, "#3a2e16", "muted border"), (p.DangerBorder, "#2a1515", "danger border"), (p.AccentBorder, "#a87a26", "accent border")];
         foreach (var (got, want, name) in derived)
             Assertions.Check(Oklch.DeltaE(got, Hex(want)) <= 0.03f, $"amber {name} within dE 0.03 of {want}");
-        Assertions.Check(p.Window == Hex("#262626") && p.Muted == Hex("#909090") && p.Accent == Hex("#e0a43a"), "fixed tokens and the accent are exact");
+        Assertions.Check(p.Window == Hex("#262626") && p.Muted == Hex("#909090") && p.TabText == Hex("#bdbdbd") && p.Accent == Hex("#e0a43a"), "fixed tokens and the accent are exact");
+        // The sheet's tab strip and fill slider greys that reuse an existing token.
+        (Vector4 Got, string Want, string Name)[] reused = [(p.Panel, "#1f1f1f", "tab rest"), (p.FrameActive, "#2e2e2e", "tab hover"),
+            (p.Control, "#3a3a3a", "tab active"), (p.FrameActive, "#2a2a2a", "slider disabled fill"), (p.Selection, "#56431f", "slider hover fill")];
+        foreach (var (got, want, name) in reused)
+            Assertions.Check(Oklch.DeltaE(got, Hex(want)) <= 0.03f, $"{name} token within dE 0.03 of {want}");
     }
     static void OnAccentContrast()   // spec's five accents, plus amber
     {
@@ -67,7 +72,7 @@ internal static class PaletteScenarios
         foreach (var a in new[] { "#808080", "#000000", "#ffffff" })
         {
             var p = Palette.From(Hex(a));
-            var all = new[] { p.AccentHovered, p.AccentPressed, p.AccentMuted, p.Selection, p.SelectionText, p.OnAccent };
+            var all = new[] { p.AccentHovered, p.AccentPressed, p.AccentMuted, p.AccentBorder, p.Selection, p.SelectionText, p.OnAccent };
             Assertions.Check(all.All(v => float.IsFinite(v.X + v.Y + v.Z) && v.X is >= 0 and <= 1 && v.Y is >= 0 and <= 1 && v.Z is >= 0 and <= 1), $"{a} derives finite colours in range");
         }
         var half = Hex("#e0a43a"); half.W = 0.5f;

@@ -9,6 +9,7 @@ internal static class TextScenarios
     {
         Scenarios.Run(LabelText);
         Scenarios.Run(NumberText);
+        Scenarios.Run(WheelSteps);
     }
 
     static void LabelText()
@@ -22,5 +23,12 @@ internal static class TextScenarios
     {
         Assertions.Check(Numbers.Of(0) == "0" && Numbers.Of(1023) == "1023" && Numbers.Of(-5) == "-5" && Numbers.Of(1_000_000) == "1000000", "values");
         Assertions.Check(ReferenceEquals(Numbers.Of(42), Numbers.Of(42)), "small numbers are cached");
+    }
+    static void WheelSteps()
+    {
+        Assertions.Check(ComboWheel.Step(0, 3, 1) == 1 && ComboWheel.Step(2, 3, 1) == 0 && ComboWheel.Step(0, 3, -1) == 2, "wraps both ways");
+        Assertions.Check(ComboWheel.Step(-1, 3, 1) == 0 && ComboWheel.Step(7, 3, -1) == 2, "out of range starts at an end");
+        Assertions.Check(ComboWheel.Step(1, 0, 1) == 1, "empty list keeps the index");
+        Assertions.Check(ComboWheel.Pick(new[] { "a", "b", "c" }, "c", 1) == "a" && ComboWheel.Pick(new[] { "a", "b" }, "zz", -1) == "b", "pick by value");
     }
 }

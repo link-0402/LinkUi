@@ -29,6 +29,9 @@ public sealed record Palette
     public Vector4 Hint { get; init; }
     public Vector4 Disabled { get; init; }
 
+    /// <summary>Tab strip labels at rest, between <see cref="Text"/> and <see cref="Muted"/>.</summary>
+    public Vector4 TabText { get; init; }
+
     /// <summary>Header and ghost-button icons at rest.</summary>
     public Vector4 Glyph { get; init; }
 
@@ -36,6 +39,9 @@ public sealed record Palette
     public Vector4 AccentHovered { get; init; }
     public Vector4 AccentPressed { get; init; }
     public Vector4 AccentMuted { get; init; }
+
+    /// <summary>Outline of an accent button and of a toggle that's on: <see cref="Accent"/> well darker.</summary>
+    public Vector4 AccentBorder { get; init; }
 
     /// <summary>Outline of a disabled accent button: <see cref="AccentMuted"/> a little darker.</summary>
     public Vector4 AccentMutedBorder { get; init; }
@@ -96,11 +102,13 @@ public sealed record Palette
             Muted = Oklch.Hex("#909090"),
             Hint = Oklch.Hex("#7a7a7a"),
             Disabled = Oklch.Hex("#5e5e5e"),
+            TabText = Oklch.Hex("#bdbdbd"),
             Glyph = Oklch.Hex("#9a9a9a"),
             Accent = accent,
             AccentHovered = Oklch.FromOklch(hoverL, c * 0.94f, h + 1.1f),
             AccentPressed = Oklch.FromOklch(pressedL, c * 0.95f, h - 1.3f),
             AccentMuted = Oklch.FromOklch(0.358f, c * 0.37f, h + 4.0f),
+            AccentBorder = Oklch.FromOklch(l - 0.147f, c * 0.82f, h + 0.5f),
             AccentMutedBorder = Oklch.FromOklch(0.308f, c * 0.30f, h + 5.7f),
             Selection = Oklch.FromOklch(0.386f, c * 0.45f, h + 2.3f),
             SelectionText = Oklch.FromOklch(0.893f, c * 0.76f, h + 3.6f),

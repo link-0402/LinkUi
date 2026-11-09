@@ -23,7 +23,7 @@ public static partial class Ui
             Content(visible, glyph, p.Accent with { W = p.Accent.W * 0.45f });
             return false;
         }
-        Frame(held && hovered ? p.AccentPressed : hovered ? p.AccentHovered : p.Accent, p.AccentPressed);
+        Frame(held && hovered ? p.AccentPressed : hovered ? p.AccentHovered : p.Accent, p.AccentBorder);
         Content(visible, glyph, p.OnAccent);
         return clicked;
     }
@@ -87,7 +87,7 @@ public static partial class Ui
             on = !on;
         if (on)
         {
-            Frame(p.Selection, p.AccentPressed);
+            Frame(p.Selection, p.AccentBorder);
             Content(visible, null, p.SelectionText);
         }
         else

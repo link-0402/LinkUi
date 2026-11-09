@@ -17,6 +17,7 @@ internal sealed partial class GalleryWindow : Window
     [
         BatchPrimary, BatchDanger, BatchIcon, BatchGhost, BatchToggle, BatchTooltip, BatchBadge, BatchStatusDot,
         BatchBanner, BatchEmptyState, BatchSpinner, BatchHint, BatchHintWrapped, BatchMuted, BatchSectionHeader, BatchPropertyRow,
+        BatchTabStrip, BatchSlider, BatchChip, BatchSearchBox, BatchCombo, BatchSplitter,
     ];
 
     /// <summary>The bare-button baseline: as many buttons as <see cref="Batch"/> has calls. Declared after it.</summary>
@@ -70,6 +71,7 @@ internal sealed partial class GalleryWindow : Window
         DrawTokens();
         DrawFonts();
         DrawWidgetsSection();
+        DrawWidgetsPart2Section();
         DrawBuiltinsSection();
     }
 
