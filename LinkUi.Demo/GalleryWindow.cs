@@ -1,16 +1,16 @@
 using System.Numerics;
 using System.Reflection;
 using Dalamud.Bindings.ImGui;
-using Dalamud.Interface.Windowing;
+using Dalamud.Interface;
 using Dalamud.Plugin.Services;
 
 namespace LinkUi.Demo;
 
 /// <summary>
 /// Every LinkUi look in one window: the style self-test, the allocation probe, the palette tokens,
-/// the fonts and the built-in ImGui widgets under the LinkUi style.
+/// the fonts, the header sample's controls and the built-in ImGui widgets under the LinkUi style.
 /// </summary>
-internal sealed partial class GalleryWindow : Window
+internal sealed partial class GalleryWindow : ToolWindow
 {
     /// <summary>One call per custom widget; the allocation probe times this batch every frame.</summary>
     internal static readonly Action[] Batch =
@@ -26,6 +26,7 @@ internal sealed partial class GalleryWindow : Window
     private const int LogEvery = 300;
 
     private readonly IPluginLog log;
+    private readonly HeaderSampleWindow headerSample;
     private readonly AllocationProbe widgetsProbe = new();
     private readonly AllocationProbe baselineProbe = new();
 
@@ -42,12 +43,17 @@ internal sealed partial class GalleryWindow : Window
     private Palette? tokensPalette;
     private Token[] tokens = [];
 
-    public GalleryWindow(IPluginLog log)
+    public GalleryWindow(IPluginLog log, HeaderSampleWindow headerSample)
         : base("LinkUi Gallery###linkui-gallery")
     {
         this.log = log;
+        this.headerSample = headerSample;
         Size = new Vector2(720, 640);
         SizeCondition = ImGuiCond.FirstUseEver;
+        HeaderActions.Add(new HeaderAction(FontAwesomeIcon.Heart, "Sample: heart", () => log.Information("action {N}", 1)));
+        HeaderActions.Add(new HeaderAction(FontAwesomeIcon.Comments, "Sample: comments", () => log.Information("action {N}", 2)));
+        HeaderActions.Add(new HeaderAction(FontAwesomeIcon.BookOpen, "Sample: book", () => log.Information("action {N}", 3)));
+        HeaderActions.Add(new HeaderAction(FontAwesomeIcon.Cog, "Sample: settings", () => log.Information("action {N}", 4)));
     }
 
     public override void OnOpen()
@@ -64,12 +70,13 @@ internal sealed partial class GalleryWindow : Window
             log.Information("style self-test FAIL: {Problem:l}", selfTestProblem!);
     }
 
-    public override void Draw()
+    protected override void DrawContent()
     {
         DrawSelfTest();
         DrawAllocations();
         DrawTokens();
         DrawFonts();
+        DrawHeaderSampleSection();
         DrawWidgetsSection();
         DrawWidgetsPart2Section();
         DrawBuiltinsSection();
@@ -172,6 +179,34 @@ internal sealed partial class GalleryWindow : Window
         using (Fonts.Heading())
             ImGui.TextUnformatted("Heading: the quick brown fox jumps over the lazy dog");
         ImGui.TextUnformatted("Body: the quick brown fox jumps over the lazy dog");
+    }
+
+    private void DrawHeaderSampleSection()
+    {
+        SectionTitle("Header sample");
+        var open = headerSample.IsOpen;
+        if (ImGui.Checkbox("Show the header sample", ref open))
+            headerSample.IsOpen = open;
+        var subtitle = headerSample.ShowSubtitle;
+        if (ImGui.Checkbox("Subtitle", ref subtitle))
+            headerSample.ShowSubtitle = subtitle;
+        var count = headerSample.ActionCount;
+        ImGui.AlignTextToFramePadding();
+        ImGui.TextUnformatted("Actions");
+        var picked = false;
+        ImGui.SameLine();
+        picked |= ImGui.RadioButton("0##hs-actions", ref count, 0);
+        ImGui.SameLine();
+        picked |= ImGui.RadioButton("2##hs-actions", ref count, 2);
+        ImGui.SameLine();
+        picked |= ImGui.RadioButton("4##hs-actions", ref count, 4);
+        if (picked)
+            headerSample.SetActionCount(count);
+        if (ImGui.Button("Make narrow"))
+            headerSample.MakeNarrow();
+        ImGui.SameLine();
+        if (ImGui.Button("Make wide"))
+            headerSample.MakeWide();
     }
 
     private static Token[] ReadTokens(Palette palette)

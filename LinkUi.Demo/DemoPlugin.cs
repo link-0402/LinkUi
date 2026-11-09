@@ -7,7 +7,7 @@ using Dalamud.Plugin.Services;
 
 namespace LinkUi.Demo;
 
-/// <summary>The LinkUi demo: one Gallery window drawn under the LinkUi host, opened with <c>/linkui</c>.</summary>
+/// <summary>The LinkUi demo: the Gallery window, opened with <c>/linkui</c>, and the header sample it drives.</summary>
 public sealed class DemoPlugin : IDalamudPlugin
 {
     private const string Command = "/linkui";
@@ -25,8 +25,10 @@ public sealed class DemoPlugin : IDalamudPlugin
         this.commands = commands;
         host = new LinkUiHost(pluginInterface, log,
             new LinkUiOptions(new Vector4(224 / 255f, 164 / 255f, 58 / 255f, 1), FontAwesomeIcon.Palette));
-        gallery = new GalleryWindow(log);
+        var headerSample = new HeaderSampleWindow(log);
+        gallery = new GalleryWindow(log, headerSample);
         windowSystem.AddWindow(gallery);
+        windowSystem.AddWindow(headerSample);
         host.Draw += windowSystem.Draw;
         toggleGallery = gallery.Toggle;
         pluginInterface.UiBuilder.OpenMainUi += toggleGallery;
