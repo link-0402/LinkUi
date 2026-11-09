@@ -32,6 +32,8 @@ public static class ComboWheel
     /// <summary>The entry <paramref name="steps"/> on from the first one <paramref name="isCurrent"/> matches.</summary>
     public static T Pick<T>(IReadOnlyList<T> items, Func<T, bool> isCurrent, int steps)
     {
+        if (items.Count == 0)
+            return default!;
         var index = -1;
         for (var i = 0; i < items.Count && index < 0; i++)
             if (isCurrent(items[i]))
@@ -41,7 +43,7 @@ public static class ComboWheel
 
     /// <summary>The entry <paramref name="steps"/> on from <paramref name="current"/>.</summary>
     public static T Pick<T>(IReadOnlyList<T> items, T current, int steps)
-        => Pick(items, item => EqualityComparer<T>.Default.Equals(item, current), steps);
+        => items.Count == 0 ? current : Pick(items, item => EqualityComparer<T>.Default.Equals(item, current), steps);
 
     /// <summary>Steps <paramref name="index"/> through <paramref name="count"/> entries; true when it changed.</summary>
     public static bool Scroll(ref int index, int count)

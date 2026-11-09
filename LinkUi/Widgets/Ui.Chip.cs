@@ -34,7 +34,7 @@ public static partial class Ui
         var pillMin = new Vector2(min.X, centreY - half);
         var pillMax = new Vector2(max.X, centreY + half);
         var fill = selected
-            ? hovered ? p.Selection with { W = p.Selection.W * 0.85f } : p.Selection
+            ? held && hovered ? p.Selection with { W = p.Selection.W * 0.7f } : hovered ? p.Selection with { W = p.Selection.W * 0.85f } : p.Selection
             : held && hovered ? p.ControlActive : hovered ? p.ControlHovered : p.Control;
         var drawList = ImGui.GetWindowDrawList();
         drawList.AddRectFilled(pillMin, pillMax, ImGui.GetColorU32(fill), m.FrameRounding);

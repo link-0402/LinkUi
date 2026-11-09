@@ -15,7 +15,10 @@ public static partial class Ui
         var m = Theme.Current.Metrics;
         var height = ImGui.GetFrameHeight();
         var padX = ImGui.GetStyle().FramePadding.X;
-        var changed = false;
+        // Every segment compares against the index from before the loop and a click applies after it,
+        // so two segments never show as active in the same frame.
+        var current = index;
+        var picked = -1;
         ImGui.PushID(id);
         try
         {
@@ -35,12 +38,9 @@ public static partial class Ui
                 {
                     ImGui.PopID();
                 }
-                if (clicked && index != i)
-                {
-                    index = i;
-                    changed = true;
-                }
-                var active = i == index;
+                if (clicked)
+                    picked = i;
+                var active = i == current;
                 var hovered = ImGui.IsItemHovered();
                 var min = ImGui.GetItemRectMin();
                 var max = ImGui.GetItemRectMax();
@@ -57,6 +57,9 @@ public static partial class Ui
         {
             ImGui.PopID();
         }
-        return changed;
+        if (picked < 0 || picked == current)
+            return false;
+        index = picked;
+        return true;
     }
 }

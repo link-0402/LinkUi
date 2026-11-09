@@ -30,5 +30,7 @@ internal static class TextScenarios
         Assertions.Check(ComboWheel.Step(-1, 3, 1) == 0 && ComboWheel.Step(7, 3, -1) == 2, "out of range starts at an end");
         Assertions.Check(ComboWheel.Step(1, 0, 1) == 1, "empty list keeps the index");
         Assertions.Check(ComboWheel.Pick(new[] { "a", "b", "c" }, "c", 1) == "a" && ComboWheel.Pick(new[] { "a", "b" }, "zz", -1) == "b", "pick by value");
+        Assertions.Check(ComboWheel.Pick(Array.Empty<string>(), "x", 1) == "x", "pick by value on an empty list keeps the current entry");
+        Assertions.Check(ComboWheel.Pick(Array.Empty<string>(), s => s == "x", 1) == null, "pick by predicate on an empty list gives the default");
     }
 }

@@ -36,20 +36,47 @@ public static partial class Ui
             }
         }
 
-        Frame(p.Frame, p.Border);
+        // Track, then the fill, then the outline on top, so the fill doesn't hide the outline's left edge.
+        var drawList = ImGui.GetWindowDrawList();
+        var rounding = Theme.Current.Metrics.FrameRounding;
+        Frame(p.Frame, null);
         var fraction = max > min ? Math.Clamp((value - min) / (max - min), 0, 1) : 0;
+        var fillEnd = rectMin.X + width * fraction;
         if (fraction > 0)
         {
             var fill = !enabled ? p.FrameActive : held ? p.Accent : hovered ? p.Selection : p.AccentMuted;
-            ImGui.GetWindowDrawList().AddRectFilled(rectMin, new Vector2(rectMin.X + width * fraction, rectMax.Y), ImGui.GetColorU32(fill),
-                Theme.Current.Metrics.FrameRounding, fraction >= 1 ? ImDrawFlags.RoundCornersAll : ImDrawFlags.RoundCornersLeft);
+            drawList.AddRectFilled(rectMin, new Vector2(fillEnd, rectMax.Y), ImGui.GetColorU32(fill),
+                rounding, fraction >= 1 ? ImDrawFlags.RoundCornersAll : ImDrawFlags.RoundCornersLeft);
         }
+        drawList.AddRect(rectMin, rectMax, ImGui.GetColorU32(p.Border), rounding, ImDrawFlags.None, 1f);
 
         var text = SliderValueText(ImGuiP.GetItemID(), value, format);
-        var textSize = ImGui.CalcTextSize(text);
-        var colour = !enabled ? p.Disabled : held ? p.OnAccent : p.Text;
-        ImGui.GetWindowDrawList().AddText((rectMin + rectMax - textSize) / 2, ImGui.GetColorU32(colour), text);
+        var textPos = (rectMin + rectMax - ImGui.CalcTextSize(text)) / 2;
+        if (!held)
+        {
+            drawList.AddText(textPos, ImGui.GetColorU32(enabled ? p.Text : p.Disabled), text);
+            return changed;
+        }
+        // While dragging the fill is the accent: on-accent text over the fill, normal text over the rest.
+        ClippedText(rectMin, new Vector2(fillEnd, rectMax.Y), textPos, p.OnAccent, text);
+        ClippedText(new Vector2(fillEnd, rectMin.Y), rectMax, textPos, p.Text, text);
         return changed;
+    }
+
+    private static void ClippedText(Vector2 clipMin, Vector2 clipMax, Vector2 position, Vector4 colour, string text)
+    {
+        if (clipMax.X <= clipMin.X)
+            return;
+        var drawList = ImGui.GetWindowDrawList();
+        drawList.PushClipRect(clipMin, clipMax, true);
+        try
+        {
+            drawList.AddText(position, ImGui.GetColorU32(colour), text);
+        }
+        finally
+        {
+            drawList.PopClipRect();
+        }
     }
 
     private static string SliderValueText(uint id, float value, string format)
