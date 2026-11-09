@@ -19,7 +19,7 @@ public static partial class Ui
         var clicked = Hit(label, ButtonSize(visible, glyph), enabled, out var hovered, out var held);
         if (!enabled)
         {
-            Frame(p.AccentMuted, p.Border);
+            Frame(p.AccentMuted, p.AccentMutedBorder);
             Content(visible, glyph, p.Accent with { W = p.Accent.W * 0.45f });
             return false;
         }
@@ -40,7 +40,7 @@ public static partial class Ui
             Content(visible, null, p.Disabled);
             return false;
         }
-        Frame(held && hovered ? p.DangerActive : hovered ? p.DangerHovered : p.Danger, p.Border);
+        Frame(held && hovered ? p.DangerActive : hovered ? p.DangerHovered : p.Danger, p.DangerBorder);
         Content(visible, null, p.DangerText);
         return clicked;
     }
@@ -159,7 +159,7 @@ public static partial class Ui
         var drawList = ImGui.GetWindowDrawList();
         if (glyph != null)
         {
-            ImGui.PushFont(UiBuilder.IconFont);
+            ImGui.PushFont(Fonts.Icon);
             try
             {
                 var size = ImGui.CalcTextSize(glyph);
@@ -181,7 +181,7 @@ public static partial class Ui
     private static void CentredGlyph(string glyph, Vector4 colour)
     {
         var centre = (ImGui.GetItemRectMin() + ImGui.GetItemRectMax()) / 2;
-        ImGui.PushFont(UiBuilder.IconFont);
+        ImGui.PushFont(Fonts.Icon);
         try
         {
             var size = ImGui.CalcTextSize(glyph);
@@ -196,7 +196,7 @@ public static partial class Ui
     /// <summary>A glyph's width in the icon font.</summary>
     private static float GlyphWidth(string glyph)
     {
-        ImGui.PushFont(UiBuilder.IconFont);
+        ImGui.PushFont(Fonts.Icon);
         try
         {
             return ImGui.CalcTextSize(glyph).X;

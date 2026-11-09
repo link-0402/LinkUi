@@ -31,7 +31,8 @@ internal static class PaletteScenarios
     {
         var p = Palette.From(Hex("#e0a43a"));
         (Vector4 Got, string Want, string Name)[] derived = [(p.AccentHovered, "#ebb455", "hover"), (p.AccentPressed, "#c98f2a", "pressed"),
-            (p.AccentMuted, "#4a3a1c", "muted"), (p.Selection, "#55401a", "selection"), (p.SelectionText, "#ffd58a", "selection text"), (p.OnAccent, "#1a1200", "on accent")];
+            (p.AccentMuted, "#4a3a1c", "muted"), (p.Selection, "#55401a", "selection"), (p.SelectionText, "#ffd58a", "selection text"), (p.OnAccent, "#1a1200", "on accent"),
+            (p.AccentMutedBorder, "#3a2e16", "muted border"), (p.DangerBorder, "#2a1515", "danger border")];
         foreach (var (got, want, name) in derived)
             Assertions.Check(Oklch.DeltaE(got, Hex(want)) <= 0.03f, $"amber {name} within dE 0.03 of {want}");
         Assertions.Check(p.Window == Hex("#262626") && p.Muted == Hex("#909090") && p.Accent == Hex("#e0a43a"), "fixed tokens and the accent are exact");

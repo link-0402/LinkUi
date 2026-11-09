@@ -90,6 +90,7 @@ public sealed class LinkUiHost : IDisposable
             scale = now;
             Theme.Current = new ThemeState(palette, Metrics.At(now));
         }
+        Fonts.BeginFrame();  // one lock per font a frame; widget reads then hit the cache
         var metrics = Theme.Current.Metrics;
         Style.PushAll(colours, in metrics);
         try

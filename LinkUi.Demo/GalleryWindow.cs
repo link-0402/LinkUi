@@ -58,9 +58,9 @@ internal sealed partial class GalleryWindow : Window
         selfTestPassed = selfTestProblem == null;
         selfTestLine = selfTestPassed ? "Style table: PASS" : "Style table: FAIL";
         if (selfTestPassed)
-            log.Information("[LinkUi.Demo] style self-test PASS");
+            log.Information("style self-test PASS");
         else
-            log.Information("[LinkUi.Demo] style self-test FAIL: {Problem:l}", selfTestProblem!);
+            log.Information("style self-test FAIL: {Problem:l}", selfTestProblem!);
     }
 
     public override void Draw()
@@ -126,7 +126,7 @@ internal sealed partial class GalleryWindow : Window
         {
             framesSinceLog = 0;
             var widgetsValue = Batch.Length == 0 ? "none" : wm.ToString();
-            log.Information("[LinkUi.Demo] alloc widgets={Widgets:l} baseline={Baseline} bytes/frame", widgetsValue, bm);
+            log.Information("alloc widgets={Widgets:l} baseline={Baseline} bytes/frame", widgetsValue, bm);
         }
     }
 

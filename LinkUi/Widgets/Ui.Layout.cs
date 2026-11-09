@@ -10,6 +10,8 @@ public static partial class Ui
     {
         var p = Theme.Current.Palette;
         var gap = 8 * Theme.Current.Metrics.Scale;
+        // The rule ends where this line's content region ends, so it stays inside a table cell, child or pane.
+        var end = ImGui.GetCursorScreenPos().X + ImGui.GetContentRegionAvail().X;
         using (var _ = Style.Override().Colour(ImGuiCol.Text, p.Muted))
             ImGui.TextUnformatted(text);
         if (detail != null)
@@ -21,7 +23,6 @@ public static partial class Ui
         var min = ImGui.GetItemRectMin();
         var max = ImGui.GetItemRectMax();
         var start = max.X + gap;
-        var end = ImGui.GetWindowPos().X + ImGui.GetWindowContentRegionMax().X;
         if (end <= start)
             return;
         var y = MathF.Floor((min.Y + max.Y) / 2) + 0.5f;
@@ -31,10 +32,15 @@ public static partial class Ui
     /// <summary>A muted label in the property gutter; the next item fills the rest of the row.</summary>
     public static void PropertyRow(string label)
     {
+        // The gutter counts from the row's own start, so an indented row keeps its value column with its label.
+        var start = ImGui.GetCursorPosX();
         ImGui.AlignTextToFramePadding();
         using (var _ = Style.Override().Colour(ImGuiCol.Text, Theme.Current.Palette.Muted))
             ImGui.TextUnformatted(Labels.Visible(label));
-        ImGui.SameLine(Theme.Current.Metrics.PropertyGutter);
+        // SetCursorPosX, not SameLine(offset): SameLine adds the group and column offsets on top, which
+        // start already holds, so a row in a group or table cell would land twice as far in.
+        ImGui.SameLine();
+        ImGui.SetCursorPosX(start + Theme.Current.Metrics.PropertyGutter);
         ImGui.SetNextItemWidth(-1);
     }
 }

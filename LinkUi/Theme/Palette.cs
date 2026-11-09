@@ -36,6 +36,10 @@ public sealed record Palette
     public Vector4 AccentHovered { get; init; }
     public Vector4 AccentPressed { get; init; }
     public Vector4 AccentMuted { get; init; }
+
+    /// <summary>Outline of a disabled accent button: <see cref="AccentMuted"/> a little darker.</summary>
+    public Vector4 AccentMutedBorder { get; init; }
+
     public Vector4 Selection { get; init; }
     public Vector4 SelectionText { get; init; }
 
@@ -52,6 +56,10 @@ public sealed record Palette
     public Vector4 DangerHovered { get; init; }
     public Vector4 DangerActive { get; init; }
     public Vector4 DangerText { get; init; }
+
+    /// <summary>Outline of a danger button: <see cref="Danger"/> a little darker.</summary>
+    public Vector4 DangerBorder { get; init; }
+
     public Vector4 Info { get; init; }
     public Vector4 InfoTint { get; init; }
 
@@ -64,6 +72,8 @@ public sealed record Palette
         var pressedL = l - 0.067f < 0.25f ? l + 0.067f : l - 0.067f;
         var dark = Oklch.FromOklch(0.187f, c * 0.28f, h + 11.4f);
         var light = Oklch.FromOklch(0.985f, 0f, h);
+        var danger = Oklch.Hex("#3a2222");
+        var (dangerL, dangerC, dangerH) = Oklch.ToOklch(danger);
         return new Palette
         {
             Window = Oklch.Hex("#262626"),
@@ -91,6 +101,7 @@ public sealed record Palette
             AccentHovered = Oklch.FromOklch(hoverL, c * 0.94f, h + 1.1f),
             AccentPressed = Oklch.FromOklch(pressedL, c * 0.95f, h - 1.3f),
             AccentMuted = Oklch.FromOklch(0.358f, c * 0.37f, h + 4.0f),
+            AccentMutedBorder = Oklch.FromOklch(0.308f, c * 0.30f, h + 5.7f),
             Selection = Oklch.FromOklch(0.386f, c * 0.45f, h + 2.3f),
             SelectionText = Oklch.FromOklch(0.893f, c * 0.76f, h + 3.6f),
             OnAccent = Oklch.Contrast(dark, accent) >= Oklch.Contrast(light, accent) ? dark : light,
@@ -100,7 +111,8 @@ public sealed record Palette
             WarningTint = Oklch.Hex("#2a2010"),
             Error = Oklch.Hex("#e65a5a"),
             ErrorTint = Oklch.Hex("#2a1414"),
-            Danger = Oklch.Hex("#3a2222"),
+            Danger = danger,
+            DangerBorder = Oklch.FromOklch(dangerL - 0.058f, dangerC * 0.93f, dangerH + 0.5f),
             DangerHovered = Oklch.Hex("#4a2828"),
             DangerActive = Oklch.Hex("#5a2e2e"),
             DangerText = Oklch.Hex("#ff9a9a"),

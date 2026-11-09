@@ -70,7 +70,7 @@ public static partial class Ui
 
         // Measured with the wrap width the child gives the text, so tall banners don't clip.
         Vector2 glyphSize;
-        ImGui.PushFont(UiBuilder.IconFont);
+        ImGui.PushFont(Fonts.Icon);
         try
         {
             glyphSize = ImGui.CalcTextSize(glyph);
@@ -100,7 +100,7 @@ public static partial class Ui
             if (!open)
                 return;
             var top = ImGui.GetCursorPosY();
-            ImGui.PushFont(UiBuilder.IconFont);
+            ImGui.PushFont(Fonts.Icon);
             try
             {
                 using var glyphColour = Style.Override().Colour(ImGuiCol.Text, colour);
@@ -137,7 +137,7 @@ public static partial class Ui
         var scale = Theme.Current.Metrics.Scale;
         ImGui.Dummy(new Vector2(0, 28 * scale));
         var glyph = Glyphs.Of(icon);
-        ImGui.PushFont(UiBuilder.IconFont);
+        ImGui.PushFont(Fonts.Icon);
         try
         {
             CentreCursor(ImGui.CalcTextSize(glyph).X);
