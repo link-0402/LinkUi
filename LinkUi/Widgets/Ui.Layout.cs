@@ -92,8 +92,11 @@ public static partial class Ui
     public static void AlignRight(float width)
     {
         var x = RightAlignX(ImGui.GetCursorPosX(), ImGui.GetContentRegionAvail().X, width);
-        if (x != null)
-            ImGui.SameLine(x.Value);
+        if (x == null)
+            return;
+        // SetCursorPosX, not SameLine(x): SameLine adds the group and column offsets on top, which the cursor already holds.
+        ImGui.SameLine();
+        ImGui.SetCursorPosX(x.Value);
     }
 
     internal static float? RightAlignX(float cursorX, float available, float width)

@@ -255,7 +255,9 @@ internal sealed partial class GalleryWindow
             Ui.Muted("also dimmed");
         }
 
-        Ui.SectionHeader("Right align", "the button sits at the right edge");
+        Ui.SectionHeader("Right align", "label left, button at the right edge");
+        ImGui.AlignTextToFramePadding();
+        Ui.Muted("Label");
         Ui.AlignRight(90 * scale);
         ImGui.Button("Right##l-right", new Vector2(90 * scale, 0));
 

@@ -64,7 +64,16 @@ public static partial class Ui
     }
 
     /// <summary>The height a <see cref="Banner"/> with this text takes at the current content width, in the current font and theme.</summary>
-    public static float BannerHeight(string text) => MeasureBanner(Glyphs.Of(FontAwesomeIcon.InfoCircle), text).Height;
+    public static float BannerHeight(string text, Severity severity = Severity.Info)
+        => MeasureBanner(Glyphs.Of(BannerIcon(severity)), text).Height;
+
+    private static FontAwesomeIcon BannerIcon(Severity severity) => severity switch
+    {
+        Severity.Success => FontAwesomeIcon.CheckCircle,
+        Severity.Warning => FontAwesomeIcon.ExclamationTriangle,
+        Severity.Error => FontAwesomeIcon.TimesCircle,
+        _ => FontAwesomeIcon.InfoCircle,
+    };
 
     private static (Vector2 Padding, float Gap, Vector2 GlyphSize, float GlyphOffset, float TextOffset, float Height) MeasureBanner(string glyph, string text)
     {
@@ -99,14 +108,14 @@ public static partial class Ui
     {
         var p = Theme.Current.Palette;
         var m = Theme.Current.Metrics;
-        var (colour, tint, icon) = severity switch
+        var (colour, tint) = severity switch
         {
-            Severity.Success => (p.Success, p.SuccessTint, FontAwesomeIcon.CheckCircle),
-            Severity.Warning => (p.Warning, p.WarningTint, FontAwesomeIcon.ExclamationTriangle),
-            Severity.Error => (p.Error, p.ErrorTint, FontAwesomeIcon.TimesCircle),
-            _ => (p.Info, p.InfoTint, FontAwesomeIcon.InfoCircle),
+            Severity.Success => (p.Success, p.SuccessTint),
+            Severity.Warning => (p.Warning, p.WarningTint),
+            Severity.Error => (p.Error, p.ErrorTint),
+            _ => (p.Info, p.InfoTint),
         };
-        var glyph = Glyphs.Of(icon);
+        var glyph = Glyphs.Of(BannerIcon(severity));
         var (padding, gap, _, glyphOffset, textOffset, height) = MeasureBanner(glyph, text);
 
         using var _style = Style.Override()
