@@ -47,14 +47,17 @@ public static partial class Ui
         return clicked;
     }
 
-    /// <summary>A square button, one frame height on each side, with a glyph on a control fill.</summary>
-    public static bool IconButton(string id, FontAwesomeIcon icon, string? tooltip = null, bool enabled = true)
+    /// <summary>
+    /// A square button, one frame height on each side, with a glyph on a control fill. A danger button draws
+    /// its glyph in the danger text colour, for actions that throw work away.
+    /// </summary>
+    public static bool IconButton(string id, FontAwesomeIcon icon, string? tooltip = null, bool enabled = true, bool danger = false)
     {
         var p = Theme.Current.Palette;
         var clicked = Hit(id, new Vector2(ImGui.GetFrameHeight()), enabled, out var hovered, out var held);
         if (enabled)
             Frame(held && hovered ? p.ControlActive : hovered ? p.ControlHovered : p.Control, null);
-        CentredGlyph(Glyphs.Of(icon), enabled ? p.Text : p.Disabled);
+        CentredGlyph(Glyphs.Of(icon), !enabled ? p.Disabled : danger ? p.DangerText : p.Text);
         if (tooltip != null)
             Tooltip(tooltip);
         return clicked;

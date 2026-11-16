@@ -87,6 +87,8 @@ internal sealed partial class GalleryWindow
         ImGui.SameLine();
         Ui.IconButton("w-icon-off", FontAwesomeIcon.Redo, "Refresh (disabled)", false);
         ImGui.SameLine();
+        Ui.IconButton("w-icon-danger", FontAwesomeIcon.Trash, "Delete", danger: true);
+        ImGui.SameLine();
         Ui.GhostIconButton("w-ghost", FontAwesomeIcon.EllipsisH, "More options");
         ImGui.SameLine();
         Ui.GhostIconButton("w-ghost-off", FontAwesomeIcon.EllipsisH, "More options (disabled)", false);

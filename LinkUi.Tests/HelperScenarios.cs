@@ -10,6 +10,14 @@ internal static class HelperScenarios
         Scenarios.Run(CopyTip);
         Scenarios.Run(RightAlign);
         Scenarios.Run(HoverDelayClock);
+        Scenarios.Run(FallbackTheme);
+    }
+
+    static void FallbackTheme()
+    {
+        Assertions.Check(LinkUiHost.Current == null, "no host in the test run");
+        Assertions.Check(Theme.Current.Palette != null && Theme.Current.Palette.Text.W == 1f, "without a host the theme has a palette with opaque text");
+        Assertions.Check(Theme.Current.Metrics.Scale == 1f, "without a host the metrics are at 100%");
     }
 
     static void RightAlign()

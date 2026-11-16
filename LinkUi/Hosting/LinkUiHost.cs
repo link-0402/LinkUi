@@ -83,7 +83,7 @@ public sealed class LinkUiHost : IDisposable
         Fonts.Dispose();
         if (Windows.IsDirty)
             Windows.Save();
-        Theme.Current = default;
+        Theme.Current = Theme.Fallback;
         if (Current == this)
             Current = null;
     }
