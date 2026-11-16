@@ -50,6 +50,9 @@ public static class Fonts
     /// <summary>Headings. Dispose to pop.</summary>
     public static IDisposable Heading() => Push(_heading);
 
+    /// <summary>The icon font, from the cached slot. Dispose to pop.</summary>
+    public static IDisposable Icons() => Push(_icon);
+
     private static IDisposable Push(Slot? slot)
     {
         if (slot?.Current() is not { } font)

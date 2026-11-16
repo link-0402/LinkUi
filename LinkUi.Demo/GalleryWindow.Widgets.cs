@@ -41,6 +41,19 @@ internal sealed partial class GalleryWindow
     private static string batchName = string.Empty;
     private static int batchLabeledCombo;
 
+    private int badgeClicks;
+    private static readonly string[] BadgeCountTexts = MakeBadgeCountTexts(20);
+
+    private static string BadgeCountText(int clicks) => BadgeCountTexts[Math.Min(clicks, BadgeCountTexts.Length - 1)];
+
+    private static string[] MakeBadgeCountTexts(int count)
+    {
+        var texts = new string[count];
+        for (var i = 0; i < count; i++)
+            texts[i] = i == count - 1 ? "clicked " + i + "+ times" : "clicked " + i + " times";
+        return texts;
+    }
+
     private static string[][] MakeCountingTabs(int count)
     {
         var sets = new string[count][];
@@ -78,6 +91,15 @@ internal sealed partial class GalleryWindow
         ImGui.SameLine();
         Ui.GhostIconButton("w-ghost-off", FontAwesomeIcon.EllipsisH, "More options (disabled)", false);
 
+        Ui.IconTextButton(FontAwesomeIcon.FolderOpen, "Open##w-itb", "Open a mod");
+        ImGui.SameLine();
+        Ui.IconTextButton(FontAwesomeIcon.FolderOpen, "Open##w-itb-wide", "Fixed width", 140 * Theme.Current.Metrics.Scale);
+        ImGui.SameLine();
+        Ui.IconTextButton(FontAwesomeIcon.FolderOpen, "Open##w-itb-off", "Disabled", 0, false);
+        Ui.PrimaryButton("Edit in Blender##w-primary-wide", FontAwesomeIcon.Cube, true, 220 * Theme.Current.Metrics.Scale);
+        ImGui.SameLine();
+        Ui.GhostIconButton("w-ghost-big", FontAwesomeIcon.EllipsisH, "A larger ghost button", true, new Vector2(48, 48) * Theme.Current.Metrics.Scale);
+
         Ui.ToggleButton("Loop##w-toggle", ref toggleLive);
         ImGui.SameLine();
         var forcedOn = true;
@@ -94,12 +116,27 @@ internal sealed partial class GalleryWindow
         ImGui.SameLine();
         Ui.Badge("Game", p.Info);
         ImGui.SameLine();
+        if (Ui.Badge("Clicks", p.Warning))
+            badgeClicks++;
+        ImGui.SameLine();
+        ImGui.AlignTextToFramePadding();
+        Ui.Muted(BadgeCountText(badgeClicks));
+        ImGui.SameLine();
         Ui.StatusDot("Blender", p.Success, "connected", "Blender answers on its port.");
         ImGui.SameLine();
         Ui.Spinner();
         ImGui.SameLine();
         ImGui.AlignTextToFramePadding();
         Ui.Muted("Refreshing resources");
+
+        Ui.SectionHeader("Icons and help", "icons, help tip");
+        Ui.Icon(FontAwesomeIcon.Check, p.Success);
+        ImGui.SameLine();
+        Ui.Icon(FontAwesomeIcon.ExclamationTriangle, p.Warning);
+        ImGui.SameLine();
+        ImGui.AlignTextToFramePadding();
+        Ui.Muted("Hover the question mark");
+        Ui.HelpTip("A help tip: a small glyph with a tooltip.");
 
         Ui.SectionHeader("Banners");
         Ui.Banner("w-banner-success", Severity.Success, "Saved into the mod");
@@ -224,6 +261,15 @@ internal sealed partial class GalleryWindow
     private static void BatchToggle() => Ui.ToggleButton("Toggle##batch-toggle", ref batchToggle);
     private static void BatchTooltip() => Ui.Tooltip("Tooltip for the toggle");
     private static void BatchBadge() => Ui.Badge("Badge", Theme.Current.Palette.Success);
+    private static void BatchIconTextButton() => Ui.IconTextButton(FontAwesomeIcon.FolderOpen, "Open##batch-itb", "Icon text button", 120);
+    private static void BatchIconGlyph() => Ui.Icon(FontAwesomeIcon.Check, Theme.Current.Palette.Success);
+
+    private static void BatchHelpTip()
+    {
+        Ui.Muted("value");
+        Ui.HelpTip("Help tip");
+    }
+
     private static void BatchStatusDot() => Ui.StatusDot("Status", Theme.Current.Palette.Info, "dot", "Status dot");
     private static void BatchBanner() => Ui.Banner("batch-banner", Severity.Warning, "Banner");
     private static void BatchEmptyState() => Ui.EmptyState(FontAwesomeIcon.Inbox, "Empty state", "Empty state hint");

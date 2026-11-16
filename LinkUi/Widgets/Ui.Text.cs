@@ -1,5 +1,6 @@
 using System.Numerics;
 using Dalamud.Bindings.ImGui;
+using Dalamud.Interface;
 
 namespace LinkUi;
 
@@ -13,6 +14,22 @@ public static partial class Ui
 
     /// <summary>Secondary text in the muted colour.</summary>
     public static void Muted(string text) => Coloured(text, Theme.Current.Palette.Muted, false);
+
+    /// <summary>A glyph from the icon font, as text in <paramref name="colour"/>.</summary>
+    public static void Icon(FontAwesomeIcon icon, Vector4 colour)
+    {
+        using var _ = Style.Override().Colour(ImGuiCol.Text, colour);
+        using var font = Fonts.Icons();
+        ImGui.TextUnformatted(Glyphs.Of(icon));
+    }
+
+    /// <summary>A question-mark glyph on the same line, with <paramref name="text"/> as its tooltip.</summary>
+    public static void HelpTip(string text)
+    {
+        ImGui.SameLine();
+        Icon(FontAwesomeIcon.QuestionCircle, Theme.Current.Palette.Hint);
+        Tooltip(text);
+    }
 
     /// <summary>
     /// A tooltip for the last item, shown only while it's hovered (disabled items too). Pushes the tooltip

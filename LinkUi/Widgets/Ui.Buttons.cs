@@ -11,20 +11,22 @@ namespace LinkUi;
 public static partial class Ui
 {
     /// <summary>A filled accent button for the main action of a window or row.</summary>
-    public static bool PrimaryButton(string label, FontAwesomeIcon? icon = null, bool enabled = true)
+    public static bool PrimaryButton(string label, FontAwesomeIcon? icon = null, bool enabled = true, float width = 0)
     {
         var p = Theme.Current.Palette;
         var visible = Labels.Visible(label);
         var glyph = icon is { } i ? Glyphs.Of(i) : null;
-        var clicked = Hit(label, ButtonSize(visible, glyph), enabled, out var hovered, out var held);
+        var size = ButtonSize(visible, glyph, width);
+        var shift = (size.X - ButtonSize(visible, glyph).X) / 2;
+        var clicked = Hit(label, size, enabled, out var hovered, out var held);
         if (!enabled)
         {
             Frame(p.AccentMuted, p.AccentMutedBorder);
-            Content(visible, glyph, p.Accent with { W = p.Accent.W * 0.45f });
+            Content(visible, glyph, p.Accent with { W = p.Accent.W * 0.45f }, shift);
             return false;
         }
         Frame(held && hovered ? p.AccentPressed : hovered ? p.AccentHovered : p.Accent, p.AccentBorder);
-        Content(visible, glyph, p.OnAccent);
+        Content(visible, glyph, p.OnAccent, shift);
         return clicked;
     }
 
@@ -58,11 +60,28 @@ public static partial class Ui
         return clicked;
     }
 
-    /// <summary>A square glyph button with no fill until hovered, for toolbars and headers.</summary>
-    public static bool GhostIconButton(string id, FontAwesomeIcon icon, string? tooltip = null, bool enabled = true)
+    /// <summary>The <see cref="IconButton"/> look with the glyph, then the label. A width of 0 sizes it to the content.</summary>
+    public static bool IconTextButton(FontAwesomeIcon icon, string label, string? tooltip = null, float width = 0, bool enabled = true)
     {
         var p = Theme.Current.Palette;
-        var clicked = Hit(id, new Vector2(ImGui.GetFrameHeight()), enabled, out var hovered, out var held);
+        var visible = Labels.Visible(label);
+        var glyph = Glyphs.Of(icon);
+        var size = ButtonSize(visible, glyph, width);
+        var shift = (size.X - ButtonSize(visible, glyph).X) / 2;
+        var clicked = Hit(label, size, enabled, out var hovered, out var held);
+        if (enabled)
+            Frame(held && hovered ? p.ControlActive : hovered ? p.ControlHovered : p.Control, null);
+        Content(visible, glyph, enabled ? p.Text : p.Disabled, shift);
+        if (tooltip != null)
+            Tooltip(tooltip);
+        return clicked;
+    }
+
+    /// <summary>A glyph button with no fill until hovered, for toolbars and headers. A default size is one frame height square.</summary>
+    public static bool GhostIconButton(string id, FontAwesomeIcon icon, string? tooltip = null, bool enabled = true, Vector2 size = default)
+    {
+        var p = Theme.Current.Palette;
+        var clicked = Hit(id, size == default ? new Vector2(ImGui.GetFrameHeight()) : size, enabled, out var hovered, out var held);
         if (hovered)
             Frame(held ? p.ControlActive : p.Control, null);
         CentredGlyph(Glyphs.Of(icon), !enabled ? p.Disabled : hovered ? Vector4.One : p.Glyph);
@@ -131,7 +150,7 @@ public static partial class Ui
     private static Vector4 DisabledFill(Palette p) => p.Control with { W = p.Control.W * 0.55f };
 
     /// <summary>Frame height tall; the label (and glyph) plus the frame padding wide.</summary>
-    private static Vector2 ButtonSize(string visible, string? glyph)
+    private static Vector2 ButtonSize(string visible, string? glyph, float minWidth = 0)
     {
         var style = ImGui.GetStyle();
         var width = ImGui.CalcTextSize(visible).X + style.FramePadding.X * 2;
@@ -141,7 +160,7 @@ public static partial class Ui
             if (visible.Length > 0)
                 width += style.ItemInnerSpacing.X;
         }
-        return new Vector2(width, ImGui.GetFrameHeight());
+        return new Vector2(Math.Max(width, minWidth), ImGui.GetFrameHeight());
     }
 
     /// <summary>The last item's rectangle filled and optionally outlined at 1 px, with the frame rounding.</summary>
@@ -157,12 +176,12 @@ public static partial class Ui
     }
 
     /// <summary>The glyph and label inside the last item, after the frame padding, centred vertically.</summary>
-    private static void Content(string visible, string? glyph, Vector4 colour)
+    private static void Content(string visible, string? glyph, Vector4 colour, float shift = 0)
     {
         var min = ImGui.GetItemRectMin();
         var centreY = (min.Y + ImGui.GetItemRectMax().Y) / 2;
         var style = ImGui.GetStyle();
-        var x = min.X + style.FramePadding.X;
+        var x = min.X + style.FramePadding.X + shift;
         var col = ImGui.GetColorU32(colour);
         var drawList = ImGui.GetWindowDrawList();
         if (glyph != null)

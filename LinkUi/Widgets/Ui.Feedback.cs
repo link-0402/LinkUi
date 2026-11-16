@@ -8,8 +8,8 @@ public static partial class Ui
 {
     private const string NameSeparator = ": ";
 
-    /// <summary>A small tinted tag, one frame height tall so it lines up with buttons in a row.</summary>
-    public static void Badge(string text, Vector4 colour)
+    /// <summary>A small tinted tag, one frame height tall so it lines up with buttons in a row. True on the frame it is clicked.</summary>
+    public static bool Badge(string text, Vector4 colour)
     {
         var scale = Theme.Current.Metrics.Scale;
         var padX = 6 * scale;
@@ -17,11 +17,13 @@ public static partial class Ui
         var frame = ImGui.GetFrameHeight();
         var position = ImGui.GetCursorScreenPos();
         ImGui.Dummy(new Vector2(textSize.X + padX * 2, Math.Max(frame, textSize.Y)));
+        var clicked = ImGui.IsItemClicked();
         var top = position.Y + Math.Max(0, (frame - textSize.Y) / 2);
         var drawList = ImGui.GetWindowDrawList();
         drawList.AddRectFilled(new Vector2(position.X, top), new Vector2(position.X + textSize.X + padX * 2, top + textSize.Y),
             ImGui.GetColorU32(colour with { W = colour.W * 0.16f }), 2 * scale);
         drawList.AddText(new Vector2(position.X + padX, top), ImGui.GetColorU32(colour), text);
+        return clicked;
     }
 
     /// <summary>A dot in the state colour, then "name: value" in the muted colour.</summary>
