@@ -30,15 +30,10 @@ public static partial class Ui
     public static void StatusDot(string name, Vector4 colour, string value, string? tooltip = null)
     {
         var p = Theme.Current.Palette;
-        var scale = Theme.Current.Metrics.Scale;
-        var radius = 3.5f * scale;
-        var gap = 5 * scale;
-        var nameWidth = ImGui.CalcTextSize(name).X;
-        var separatorWidth = ImGui.CalcTextSize(NameSeparator).X;
-        var valueWidth = ImGui.CalcTextSize(value).X;
+        var (radius, gap, nameWidth, separatorWidth, width) = MeasureStatusDot(name, value);
         var frame = ImGui.GetFrameHeight();
         var position = ImGui.GetCursorScreenPos();
-        ImGui.Dummy(new Vector2(radius * 2 + gap + nameWidth + separatorWidth + valueWidth, frame));
+        ImGui.Dummy(new Vector2(width, frame));
 
         var centreY = position.Y + frame / 2;
         var textY = centreY - ImGui.GetTextLineHeight() / 2;
@@ -54,19 +49,26 @@ public static partial class Ui
             Tooltip(tooltip);
     }
 
-    /// <summary>A bordered, tinted box with the severity's glyph and the text wrapped to the available width.</summary>
-    public static void Banner(string id, Severity severity, string text)
+    /// <summary>The width a <see cref="StatusDot"/> with this name and value takes, in the current font and theme.</summary>
+    public static float StatusDotWidth(string name, string value) => MeasureStatusDot(name, value).Width;
+
+    private static (float Radius, float Gap, float NameWidth, float SeparatorWidth, float Width) MeasureStatusDot(string name, string value)
     {
-        var p = Theme.Current.Palette;
+        var scale = Theme.Current.Metrics.Scale;
+        var radius = 3.5f * scale;
+        var gap = 5 * scale;
+        var nameWidth = ImGui.CalcTextSize(name).X;
+        var separatorWidth = ImGui.CalcTextSize(NameSeparator).X;
+        var valueWidth = ImGui.CalcTextSize(value).X;
+        return (radius, gap, nameWidth, separatorWidth, radius * 2 + gap + nameWidth + separatorWidth + valueWidth);
+    }
+
+    /// <summary>The height a <see cref="Banner"/> with this text takes at the current content width, in the current font and theme.</summary>
+    public static float BannerHeight(string text) => MeasureBanner(Glyphs.Of(FontAwesomeIcon.InfoCircle), text).Height;
+
+    private static (Vector2 Padding, float Gap, Vector2 GlyphSize, float GlyphOffset, float TextOffset, float Height) MeasureBanner(string glyph, string text)
+    {
         var m = Theme.Current.Metrics;
-        var (colour, tint, icon) = severity switch
-        {
-            Severity.Success => (p.Success, p.SuccessTint, FontAwesomeIcon.CheckCircle),
-            Severity.Warning => (p.Warning, p.WarningTint, FontAwesomeIcon.ExclamationTriangle),
-            Severity.Error => (p.Error, p.ErrorTint, FontAwesomeIcon.TimesCircle),
-            _ => (p.Info, p.InfoTint, FontAwesomeIcon.InfoCircle),
-        };
-        var glyph = Glyphs.Of(icon);
         var padding = new Vector2(8, 5) * m.Scale;
         var gap = 8 * m.Scale;
 
@@ -89,8 +91,25 @@ public static partial class Ui
         var glyphOffset = Math.Max(0, (lineHeight - glyphSize.Y) / 2);
         var textOffset = Math.Max(0, (glyphSize.Y - lineHeight) / 2);
         var height = Math.Max(textHeight + textOffset, glyphSize.Y + glyphOffset) + padding.Y * 2;
+        return (padding, gap, glyphSize, glyphOffset, textOffset, height);
+    }
 
-        using var _ = Style.Override()
+    /// <summary>A bordered, tinted box with the severity's glyph and the text wrapped to the available width.</summary>
+    public static void Banner(string id, Severity severity, string text)
+    {
+        var p = Theme.Current.Palette;
+        var m = Theme.Current.Metrics;
+        var (colour, tint, icon) = severity switch
+        {
+            Severity.Success => (p.Success, p.SuccessTint, FontAwesomeIcon.CheckCircle),
+            Severity.Warning => (p.Warning, p.WarningTint, FontAwesomeIcon.ExclamationTriangle),
+            Severity.Error => (p.Error, p.ErrorTint, FontAwesomeIcon.TimesCircle),
+            _ => (p.Info, p.InfoTint, FontAwesomeIcon.InfoCircle),
+        };
+        var glyph = Glyphs.Of(icon);
+        var (padding, gap, _, glyphOffset, textOffset, height) = MeasureBanner(glyph, text);
+
+        using var _style = Style.Override()
             .Colour(ImGuiCol.ChildBg, tint)
             .Colour(ImGuiCol.Border, colour)
             .Var(ImGuiStyleVar.ChildRounding, m.FrameRounding)

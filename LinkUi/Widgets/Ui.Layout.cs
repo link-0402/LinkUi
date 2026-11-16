@@ -66,6 +66,55 @@ public static partial class Ui
         return Combo(id, ref index, items);
     }
 
+    /// <summary>Disables every widget drawn inside the using-block when <paramref name="disabled"/> is set.</summary>
+    public static DisabledScope Disabled(bool disabled) => new(disabled);
+
+    /// <summary>The end of a <see cref="Disabled"/> block.</summary>
+    public readonly struct DisabledScope : IDisposable
+    {
+        private readonly bool on;
+
+        internal DisabledScope(bool on)
+        {
+            this.on = on;
+            if (on)
+                ImGui.BeginDisabled();
+        }
+
+        public void Dispose()
+        {
+            if (on)
+                ImGui.EndDisabled();
+        }
+    }
+
+    /// <summary>Puts the next item of the given width at the right end of the line. Measured from the space left, so it also stays inside a table cell.</summary>
+    public static void AlignRight(float width)
+    {
+        var x = RightAlignX(ImGui.GetCursorPosX(), ImGui.GetContentRegionAvail().X, width);
+        if (x != null)
+            ImGui.SameLine(x.Value);
+    }
+
+    internal static float? RightAlignX(float cursorX, float available, float width)
+    {
+        var x = cursorX + available - width;
+        return x > cursorX ? x : null;
+    }
+
+    /// <summary>Opens the next window centred on the main viewport, when it appears.</summary>
+    public static void CenterNextPopup()
+        => ImGui.SetNextWindowPos(ImGui.GetMainViewport().GetCenter(), ImGuiCond.Appearing, new Vector2(0.5f, 0.5f));
+
+    private static HoverClock hoverClock;
+
+    /// <summary>
+    /// True once the same item has been hovered for the delay (Shift skips the wait). Call every frame
+    /// while the item is hovered; the timer restarts when the item changes or a frame passes without a call.
+    /// </summary>
+    public static bool HoverDelay(string id, double delaySeconds = 0.3)
+        => hoverClock.Update(id, ImGui.GetTime(), ImGui.GetFrameCount(), ImGui.GetIO().KeyShift, delaySeconds);
+
     private static void RowLabel(string label)
     {
         // The gutter counts from the row's own start, so an indented row keeps its value column with its label.

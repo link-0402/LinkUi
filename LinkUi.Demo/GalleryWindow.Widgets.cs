@@ -239,6 +239,59 @@ internal sealed partial class GalleryWindow
         DrawPane("w-pane-right", new Vector2(0, height), "Right pane");
     }
 
+    private bool layoutDisabled = true;
+
+    private void DrawLayoutSection()
+    {
+        SectionTitle("Layout helpers");
+        var scale = Theme.Current.Metrics.Scale;
+
+        Ui.SectionHeader("Disabled scope", "the checkbox stays live");
+        ImGui.Checkbox("Disable the group##l-disable", ref layoutDisabled);
+        using (Ui.Disabled(layoutDisabled))
+        {
+            ImGui.Button("Inside the group##l-disabled-button");
+            ImGui.SameLine();
+            Ui.Muted("also dimmed");
+        }
+
+        Ui.SectionHeader("Right align", "the button sits at the right edge");
+        Ui.AlignRight(90 * scale);
+        ImGui.Button("Right##l-right", new Vector2(90 * scale, 0));
+
+        Ui.SectionHeader("Centered popup", "opens in the middle of the screen");
+        if (ImGui.Button("Open popup##l-popup-open"))
+            ImGui.OpenPopup("l-popup");
+        Ui.CenterNextPopup();
+        if (ImGui.BeginPopup("l-popup"))
+        {
+            try
+            {
+                Ui.Muted("Centered on the main viewport.");
+            }
+            finally
+            {
+                ImGui.EndPopup();
+            }
+        }
+
+        Ui.SectionHeader("Hover delay", "the tip shows after 0.3 s, at once with Shift");
+        ImGui.Button("Hover and wait##l-hover");
+        if (ImGui.IsItemHovered() && Ui.HoverDelay("l-hover"))
+            Ui.Tooltip("Shown after the delay");
+
+        Ui.SectionHeader("Measured sizes", "outlines show StatusDotWidth and BannerHeight");
+        var p = Theme.Current.Palette;
+        var outline = ImGui.GetColorU32(p.Accent);
+        var dotStart = ImGui.GetCursorScreenPos();
+        Ui.StatusDot("Blender", p.Success, "connected");
+        ImGui.GetWindowDrawList().AddRect(dotStart, dotStart + new Vector2(Ui.StatusDotWidth("Blender", "connected"), ImGui.GetFrameHeight()), outline);
+        var bannerStart = ImGui.GetCursorScreenPos();
+        Ui.Banner("l-banner", Severity.Info, WrappedHint);
+        ImGui.GetWindowDrawList().AddRect(bannerStart,
+            bannerStart + new Vector2(ImGui.GetContentRegionAvail().X, Ui.BannerHeight(WrappedHint)), outline);
+    }
+
     private static void DrawPane(string id, Vector2 size, string text)
     {
         var open = ImGui.BeginChild(id, size, true);
@@ -300,5 +353,29 @@ internal sealed partial class GalleryWindow
     private static void BatchChip() => Ui.Chip("Chip##batch-chip", 3, false, Theme.Current.Palette.Info);
     private static void BatchSearchBox() => Ui.SearchBox("##batch-search", ref batchSearch, "Search");
     private static void BatchCombo() => Ui.Combo("##batch-combo", ref batchCombo, CollectionItems);
+    private static void BatchDisabled()
+    {
+        using (Ui.Disabled(true))
+            Ui.Muted("value");
+    }
+
+    private static void BatchAlignRight()
+    {
+        Ui.AlignRight(40);
+        Ui.Muted("value");
+    }
+
+    private static void BatchHoverDelay()
+    {
+        if (Ui.HoverDelay("batch-hover"))
+            Ui.Muted("value");
+    }
+
+    private static void BatchSizes()
+    {
+        _ = Ui.StatusDotWidth("Status", "dot");
+        _ = Ui.BannerHeight("Banner");
+    }
+
     private static void BatchSplitter() => Ui.Splitter("batch-splitter", ref batchSplit, 0f, 100f, 20f, false);
 }
