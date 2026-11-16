@@ -31,7 +31,7 @@ Subclass `ToolWindow` instead of Dalamud's `Window` and draw the body in `DrawCo
 - Override `DrawExtraOptions` to add your own rows to the options menu.
 - Dalamud's `TitleBarButtons` and its own window options menu (opacity, blur override) don't show on a `ToolWindow`.
 
-The header shows the host's icon, the title (the window name before `##`), the subtitle, the plugin actions, then pin, options and close. The options menu holds Pin window, Make click-through, Stay on top and Opacity. While click-through is on, a pill in the header turns it off when clicked.
+The header shows the host's icon, the title (the window name before `##`), the subtitle, the plugin actions, then pin, options and close. The options menu holds Pin window, Make click-through, Stay on top and Opacity, and a window can add its own rows. While click-through is on, a pill in the header turns it off when clicked.
 
 Pin, click-through, stay on top and opacity are saved per window id (the name after `###`, or the whole name) in `linkui-windows.json` in the plugin's config folder. The stored values win when the window first opens, so set them through the window after that.
 

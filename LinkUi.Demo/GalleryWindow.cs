@@ -18,6 +18,7 @@ internal sealed partial class GalleryWindow : ToolWindow
         BatchPrimary, BatchDanger, BatchIcon, BatchGhost, BatchToggle, BatchTooltip, BatchBadge, BatchStatusDot,
         BatchBanner, BatchEmptyState, BatchSpinner, BatchHint, BatchHintWrapped, BatchMuted, BatchSectionHeader, BatchPropertyRow,
         BatchTabStrip, BatchSlider, BatchChip, BatchSearchBox, BatchCombo, BatchSplitter,
+        BatchLabel, BatchLabeledValue, BatchLabeledInput, BatchLabeledCombo,
     ];
 
     /// <summary>The bare-button baseline: as many buttons as <see cref="Batch"/> has calls. Declared after it.</summary>

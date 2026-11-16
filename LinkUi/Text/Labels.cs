@@ -22,4 +22,20 @@ internal static class Labels
         Cache[label] = visible;
         return visible;
     }
+
+    private static string? copyHelp;
+    private static string copyTip = "Click to copy.";
+
+    /// <summary>The tooltip of a copyable value: the help, a blank line, then "Click to copy.". One entry is cached, keyed on the help instance.</summary>
+    public static string CopyTip(string? help)
+    {
+        if (help == null)
+            return "Click to copy.";
+        if (!ReferenceEquals(help, copyHelp))
+        {
+            copyTip = help + "\n\nClick to copy.";
+            copyHelp = help;
+        }
+        return copyTip;
+    }
 }

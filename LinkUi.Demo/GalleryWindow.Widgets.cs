@@ -29,6 +29,8 @@ internal sealed partial class GalleryWindow
     private string searchLive = string.Empty;
     private int comboLive;
     private float splitLeft = 200f;
+    private string labeledName = string.Empty;
+    private int labeledCombo;
 
     private static bool batchToggle;
     private static int batchTab;
@@ -36,6 +38,8 @@ internal sealed partial class GalleryWindow
     private static string batchSearch = string.Empty;
     private static int batchCombo;
     private static float batchSplit = 50f;
+    private static string batchName = string.Empty;
+    private static int batchLabeledCombo;
 
     private static string[][] MakeCountingTabs(int count)
     {
@@ -179,6 +183,13 @@ internal sealed partial class GalleryWindow
         Ui.PropertyRow("Collection##w-combo-row");
         Ui.Combo("##w-combo", ref comboLive, CollectionItems);
 
+        Ui.SectionHeader("Labeled rows", "label, value, input, combo");
+        Ui.Label("Plain label");
+        Ui.Muted("next item fills the row");
+        Ui.LabeledValue("Path", "chara/equipment/e0001", "Where the model lives in the game data.");
+        Ui.LabeledInput("Name", "##w-labeled-input", ref labeledName, 64, "Mod name");
+        Ui.LabeledCombo("Collection", "##w-labeled-combo", ref labeledCombo, CollectionItems, "Collection the change applies to.");
+
         Ui.SectionHeader("Splitter", "between two panes");
         var height = 80 * scale;
         var total = ImGui.GetContentRegionAvail().X;
@@ -229,6 +240,15 @@ internal sealed partial class GalleryWindow
         Ui.Muted("value");
     }
 
+    private static void BatchLabel()
+    {
+        Ui.Label("Label##batch-label", "Help");
+        Ui.Muted("value");
+    }
+
+    private static void BatchLabeledValue() => Ui.LabeledValue("Value##batch-lv", "value", "Help");
+    private static void BatchLabeledInput() => Ui.LabeledInput("Input##batch-li", "##batch-li-id", ref batchName, 64, "Hint", "Help");
+    private static void BatchLabeledCombo() => Ui.LabeledCombo("Combo##batch-lc", "##batch-lc-id", ref batchLabeledCombo, CollectionItems, "Help");
     private static void BatchTabStrip() => Ui.TabStrip("batch-tabs", TabItems, ref batchTab);
     private static void BatchSlider() => Ui.Slider("##batch-slider", ref batchSlider, 0f, 1f);
     private static void BatchChip() => Ui.Chip("Chip##batch-chip", 3, false, Theme.Current.Palette.Info);
