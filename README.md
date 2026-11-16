@@ -28,6 +28,7 @@ Subclass `ToolWindow` instead of Dalamud's `Window` and draw the body in `DrawCo
 - `HeaderActions`: the plugin's header buttons, as `HeaderAction(icon, tooltip, onClick, lit)`. They move into the options menu when the window is narrow.
 - `ContentFlags`: menu bar and scroll flags for the content area. Content flags set on `Flags` move here on the next frame, except `NoScrollbar` and `NoScrollWithMouse`, which stay on the outer window; with `AlwaysAutoResize` there's no content area and `ContentFlags` is ignored.
 - `OnPreDraw()` and `OnPostDraw()` replace `PreDraw` and `PostDraw`, which `ToolWindow` seals.
+- Override `DrawExtraOptions` to add your own rows to the options menu.
 - Dalamud's `TitleBarButtons` and its own window options menu (opacity, blur override) don't show on a `ToolWindow`.
 
 The header shows the host's icon, the title (the window name before `##`), the subtitle, the plugin actions, then pin, options and close. The options menu holds Pin window, Make click-through, Stay on top and Opacity. While click-through is on, a pill in the header turns it off when clicked.

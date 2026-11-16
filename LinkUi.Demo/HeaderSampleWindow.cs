@@ -16,6 +16,7 @@ internal sealed class HeaderSampleWindow : ToolWindow
     private readonly HeaderAction[] actions;
     private bool resizePending;
     private float fill = 0.5f;
+    private bool sampleOption;
 
     /// <summary>Allocation start of this frame's draw, read at the end of PreDraw.</summary>
     private long drawStart;
@@ -75,6 +76,8 @@ internal sealed class HeaderSampleWindow : ToolWindow
         Ui.PropertyRow("Fill row");
         Ui.Slider("##hs-fill", ref fill, 0, 1);
     }
+
+    protected override void DrawExtraOptions() => ImGui.Checkbox("Sample option", ref sampleOption);
 
     protected override void OnPreDraw() => drawStart = GC.GetAllocatedBytesForCurrentThread();
 

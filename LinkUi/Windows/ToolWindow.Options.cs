@@ -100,6 +100,7 @@ public abstract partial class ToolWindow
             opacityEdited = false;
             store.Save();
         }
+        DrawExtraOptions();
     }
 
     /// <summary>One row per plugin action: its glyph, then its tooltip as the label.</summary>

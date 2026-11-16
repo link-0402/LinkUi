@@ -69,6 +69,11 @@ public abstract partial class ToolWindow : Window
     {
     }
 
+    /// <summary>Draws extra rows at the end of the options menu, after the opacity slider. Runs inside the open menu.</summary>
+    protected virtual void DrawExtraOptions()
+    {
+    }
+
     /// <summary>Runs in <see cref="PostDraw"/>, after the window ends and the window's own style pushes are popped.</summary>
     protected virtual void OnPostDraw()
     {
