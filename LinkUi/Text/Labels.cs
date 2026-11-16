@@ -23,19 +23,19 @@ internal static class Labels
         return visible;
     }
 
-    private static string? copyHelp;
-    private static string copyTip = "Click to copy.";
+    private static readonly Dictionary<string, string> CopyCache = new(StringComparer.Ordinal);
 
-    /// <summary>The tooltip of a copyable value: the help, a blank line, then "Click to copy.". One entry is cached, keyed on the help instance.</summary>
+    /// <summary>The tooltip of a copyable value: the help, a blank line, then "Click to copy.". Every help text is cached.</summary>
     public static string CopyTip(string? help)
     {
         if (help == null)
             return "Click to copy.";
-        if (!ReferenceEquals(help, copyHelp))
-        {
-            copyTip = help + "\n\nClick to copy.";
-            copyHelp = help;
-        }
-        return copyTip;
+        if (CopyCache.TryGetValue(help, out var tip))
+            return tip;
+        if (CopyCache.Count >= MaxEntries)
+            CopyCache.Clear();
+        tip = help + "\n\nClick to copy.";
+        CopyCache[help] = tip;
+        return tip;
     }
 }

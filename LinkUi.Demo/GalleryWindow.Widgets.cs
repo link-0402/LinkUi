@@ -184,7 +184,7 @@ internal sealed partial class GalleryWindow
         Ui.Combo("##w-combo", ref comboLive, CollectionItems);
 
         Ui.SectionHeader("Labeled rows", "label, value, input, combo");
-        Ui.Label("Plain label");
+        Ui.Label("Label with help", "Hover the label to see this.");
         Ui.Muted("next item fills the row");
         Ui.LabeledValue("Path", "chara/equipment/e0001", "Where the model lives in the game data.");
         Ui.LabeledInput("Name", "##w-labeled-input", ref labeledName, 64, "Mod name");

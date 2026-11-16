@@ -15,5 +15,7 @@ internal static class HelperScenarios
         Assertions.Check(Labels.CopyTip(null) == "Click to copy.", "no help");
         Assertions.Check(Labels.CopyTip("Path of the mod.") == "Path of the mod.\n\nClick to copy.", "with help");
         Assertions.Check(ReferenceEquals(Labels.CopyTip("a"), Labels.CopyTip("a")), "cached for the same help");
+        var first = Labels.CopyTip("a"); Labels.CopyTip("b");
+        Assertions.Check(ReferenceEquals(Labels.CopyTip("a"), first), "several helps stay cached");
     }
 }
