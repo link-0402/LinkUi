@@ -30,6 +30,7 @@ internal sealed partial class GalleryWindow
     private int comboLive;
     private float splitLeft = 200f;
     private string labeledName = string.Empty;
+    private string labelHelpInput = string.Empty;
     private int labeledCombo;
 
     private static bool batchToggle;
@@ -66,11 +67,6 @@ internal sealed partial class GalleryWindow
     {
         SectionTitle("LinkUi widgets (part 1)");
         var p = Theme.Current.Palette;
-        if (p == null)
-        {
-            ImGui.TextUnformatted("No palette: LinkUi has no host.");
-            return;
-        }
 
         Ui.SectionHeader("Buttons", "rest, then disabled");
         Ui.PrimaryButton("Edit in Blender##w-primary");
@@ -184,11 +180,6 @@ internal sealed partial class GalleryWindow
     {
         SectionTitle("LinkUi widgets (part 2)");
         var p = Theme.Current.Palette;
-        if (p == null)
-        {
-            ImGui.TextUnformatted("No palette: LinkUi has no host.");
-            return;
-        }
         var scale = Theme.Current.Metrics.Scale;
 
         Ui.SectionHeader("Tab strip", "live, then labels that change each second");
@@ -224,7 +215,7 @@ internal sealed partial class GalleryWindow
 
         Ui.SectionHeader("Labeled rows", "label, value, input, combo");
         Ui.Label("Label with help", "Hover the label to see this.");
-        Ui.Muted("next item fills the row");
+        ImGui.InputTextWithHint("##w-label-input", "next item fills the row", ref labelHelpInput, 64);
         Ui.LabeledValue("Path", "chara/equipment/e0001", "Where the model lives in the game data.");
         Ui.LabeledInput("Name", "##w-labeled-input", ref labeledName, 64, "Mod name");
         Ui.LabeledCombo("Collection", "##w-labeled-combo", ref labeledCombo, CollectionItems, "Collection the change applies to.");
@@ -262,6 +253,39 @@ internal sealed partial class GalleryWindow
         Ui.Muted("Label");
         Ui.AlignRight(90 * scale);
         ImGui.Button("Right##l-right", new Vector2(90 * scale, 0));
+
+        Ui.SectionHeader("Right align in a group", "indented group, then a table cell");
+        ImGui.Indent(40 * scale);
+        ImGui.BeginGroup();
+        try
+        {
+            ImGui.AlignTextToFramePadding();
+            Ui.Muted("In a group");
+            Ui.AlignRight(90 * scale);
+            ImGui.Button("Right##l-right-group", new Vector2(90 * scale, 0));
+        }
+        finally
+        {
+            ImGui.EndGroup();
+            ImGui.Unindent(40 * scale);
+        }
+        if (ImGui.BeginTable("l-right-table", 2, ImGuiTableFlags.Borders))
+        {
+            try
+            {
+                ImGui.TableNextColumn();
+                Ui.Muted("Left cell");
+                ImGui.TableNextColumn();
+                ImGui.AlignTextToFramePadding();
+                Ui.Muted("In a cell");
+                Ui.AlignRight(60 * scale);
+                ImGui.Button("Right##l-right-cell", new Vector2(60 * scale, 0));
+            }
+            finally
+            {
+                ImGui.EndTable();
+            }
+        }
 
         Ui.SectionHeader("Centered popup", "opens in the middle of the screen");
         if (ImGui.Button("Open popup##l-popup-open"))
@@ -371,7 +395,9 @@ internal sealed partial class GalleryWindow
 
     private static void BatchHoverDelay()
     {
-        if (Ui.HoverDelay("batch-hover"))
+        // Only while hovered, as callers do: an unguarded call every frame would restart the Layout sample's delay.
+        Ui.Muted("hover");
+        if (ImGui.IsItemHovered() && Ui.HoverDelay("batch-hover"))
             Ui.Muted("value");
     }
 

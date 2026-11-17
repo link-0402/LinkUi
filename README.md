@@ -28,7 +28,7 @@ Subclass `ToolWindow` instead of Dalamud's `Window` and draw the body in `DrawCo
 - `HeaderActions`: the plugin's header buttons, as `HeaderAction(icon, tooltip, onClick, lit)`. They move into the options menu when the window is narrow.
 - `ContentFlags`: menu bar and scroll flags for the content area. Content flags set on `Flags` move here on the next frame, except `NoScrollbar` and `NoScrollWithMouse`, which stay on the outer window; with `AlwaysAutoResize` there's no content area and `ContentFlags` is ignored.
 - `OnPreDraw()` and `OnPostDraw()` replace `PreDraw` and `PostDraw`, which `ToolWindow` seals.
-- Override `DrawExtraOptions` to add your own rows to the options menu.
+- Override `DrawExtraOptions` to add your own rows to the options menu. They come after Opacity. If the actions fold into the menu, the rows come before "Plugin actions".
 - Dalamud's `TitleBarButtons` and its own window options menu (opacity, blur override) don't show on a `ToolWindow`.
 
 The header shows the host's icon, the title (the window name before `##`), the subtitle, the plugin actions, then pin, options and close. The options menu holds Pin window, Make click-through, Stay on top and Opacity, and a window can add its own rows. While click-through is on, a pill in the header turns it off when clicked.
@@ -43,7 +43,8 @@ All in the static `Ui` class unless noted. Widgets need the host: call them only
 |---|---|
 | `PrimaryButton` | Filled accent button for the main action, with an optional icon. |
 | `DangerButton` | Red-tinted button for actions that throw work away. |
-| `IconButton` | Square glyph button on a control fill. |
+| `IconButton` | Square glyph button on a control fill. `danger: true` tints it red. |
+| `IconTextButton` | Glyph and label on one button, with an optional tooltip. |
 | `GhostIconButton` | Square glyph button with no fill until hovered, for toolbars. |
 | `ToggleButton` | Button that stays pressed while on. |
 | `Chip` | Filter chip with a count and optional colour swatches. |
@@ -55,15 +56,26 @@ All in the static `Ui` class unless noted. Widgets need the host: call them only
 | `Splitter` | Drag handle between two panes. |
 | `SectionHeader` | Muted heading with an optional detail and a hairline. |
 | `PropertyRow` | Muted label in the gutter; the next item fills the row. |
-| `Badge` | Small tinted tag. |
-| `StatusDot` | Coloured dot, then "name: value". |
-| `Banner` | Tinted box with a `Severity` glyph and wrapped text. |
+| `Label` | `PropertyRow` label with an optional tooltip on it. |
+| `LabeledValue` | Label and a read-only value. A click copies the value. |
+| `LabeledInput`, `LabeledCombo` | Label and a text field or `Combo` beside it. |
+| `Badge` | Small tinted tag. Returns true on a click. |
+| `StatusDot` | Coloured dot, then "name: value". `StatusDotWidth` measures one. |
+| `Banner` | Tinted box with a `Severity` glyph and wrapped text. `BannerHeight` measures one. |
 | `EmptyState` | Centred glyph, title and hint for an empty list. |
 | `Spinner` | Turning arc for background work. |
 | `Hint`, `HintWrapped`, `Muted` | Text in the hint or muted colour. |
 | `Tooltip` | Tooltip for the last item, in the tooltip colours. |
+| `Icon` | Glyph from the icon font in a colour. |
+| `HelpTip` | Question-mark glyph on the same line, with a tooltip. |
+| `Disabled` | `using (Ui.Disabled(flag))` disables every widget inside the block. |
+| `AlignRight` | Puts the next item at the right end of the line. If the item overlaps the previous item, it goes on the next line. |
+| `CenterNextPopup` | Opens the next popup in the middle of the main viewport. |
+| `HoverDelay` | True after the item is hovered for a delay. Shift skips the delay. It tracks one item at a time. |
 
-Colours are on `Theme.Current.Palette` and sizes on `Theme.Current.Metrics`. For a local change, use `using var _ = Style.Override().Colour(ImGuiCol.Text, p.Muted);`. `Fonts.Title()` and `Fonts.Heading()` push the larger fonts; dispose to pop.
+A button's `width` is a minimum, and 0 fits the content. A labeled row's `width` of -1 fills the row.
+
+Colours are on `Theme.Current.Palette` and sizes on `Theme.Current.Metrics`. Without a host, `Theme.Current` holds a fallback palette at 100% scale. For a local change, use `using var _ = Style.Override().Colour(ImGuiCol.Text, p.Muted);`. `Fonts.Title()` and `Fonts.Heading()` push the larger fonts and `Fonts.Icons()` the icon font. Dispose to pop.
 
 ## Known limits
 

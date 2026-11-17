@@ -22,9 +22,12 @@ internal static class HelperScenarios
 
     static void RightAlign()
     {
-        Assertions.Check(Ui.RightAlignX(10, 200, 50) == 160f, "room");
-        Assertions.Check(Ui.RightAlignX(10, 40, 50) == null, "no room");
-        Assertions.Check(Ui.RightAlignX(10, 50, 50) == null, "exact fit stays put");
+        Assertions.Check(Ui.RightAlignX(10, 200, 50, 10, 0) == 160f, "room");
+        Assertions.Check(Ui.RightAlignX(10, 40, 50, 10, 0) == null, "no room");
+        Assertions.Check(Ui.RightAlignX(10, 50, 50, 10, 0) == null, "exact fit stays put");
+        Assertions.Check(Ui.RightAlignX(10, 200, 50, 100, 8) == 160f, "fits after the previous item");
+        Assertions.Check(Ui.RightAlignX(10, 200, 50, 152, 8) == 160f, "touching the spacing still fits");
+        Assertions.Check(Ui.RightAlignX(0, 350, 90, 300, 8) == null, "would overlap the previous item, so it wraps");
     }
 
     static void HoverDelayClock()

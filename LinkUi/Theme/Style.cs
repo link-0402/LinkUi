@@ -78,8 +78,7 @@ public static class Style
     }
 
     /// <summary>The coverage problem with the live palette, or null when the table is complete (for the demo's Gallery).</summary>
-    public static string? SelfTest() =>
-        Theme.Current.Palette is { } palette ? CheckCoverage(palette) : "LinkUi has no host, so there is no palette to check.";
+    public static string? SelfTest() => CheckCoverage(Theme.Current.Palette);
 
     /// <summary>
     /// Starts a set of pushes popped together on dispose: <c>using var _ = Style.Override().Colour(ImGuiCol.Text, p.Muted);</c>.

@@ -69,7 +69,10 @@ public abstract partial class ToolWindow : Window
     {
     }
 
-    /// <summary>Draws extra rows at the end of the options menu, after the opacity slider. Runs inside the open menu.</summary>
+    /// <summary>
+    /// Draws extra rows in the options menu, after the opacity slider and before "Plugin actions" when the actions
+    /// fold into the menu. Runs inside the open menu.
+    /// </summary>
     protected virtual void DrawExtraOptions()
     {
     }
@@ -171,10 +174,9 @@ public abstract partial class ToolWindow : Window
     {
         ImGui.SetCursorScreenPos(windowPos + new Vector2(0, headerHeight));
         ImGui.PushStyleColor(ImGuiCol.ChildBg, Vector4.Zero);
-        bool visible;
         try
         {
-            visible = ImGui.BeginChild(ContentId, Vector2.Zero, false, ContentFlags | ImGuiWindowFlags.AlwaysUseWindowPadding);
+            ImGui.BeginChild(ContentId, Vector2.Zero, false, ContentFlags | ImGuiWindowFlags.AlwaysUseWindowPadding);
         }
         finally
         {
@@ -183,8 +185,8 @@ public abstract partial class ToolWindow : Window
         }
         try
         {
-            if (visible)
-                DrawContent();
+            // Even when the child is fully clipped: windows run per-frame work (polling, preview pumps) in DrawContent.
+            DrawContent();
         }
         finally
         {

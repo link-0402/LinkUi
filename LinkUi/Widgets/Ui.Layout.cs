@@ -30,20 +30,15 @@ public static partial class Ui
     }
 
     /// <summary>A muted label in the property gutter; the next item fills the rest of the row.</summary>
-    public static void PropertyRow(string label) => RowLabel(label);
+    public static void PropertyRow(string label) => RowLabel(label, null);
 
     /// <summary>A <see cref="PropertyRow"/> label with an optional tooltip on it; the next item fills the rest of the row.</summary>
-    public static void Label(string label, string? help = null)
-    {
-        RowLabel(label);
-        if (help != null)
-            Tooltip(help);
-    }
+    public static void Label(string label, string? help = null) => RowLabel(label, help);
 
     /// <summary>A label and a read-only value beside it. Hovering shows the help and "Click to copy."; a click copies the value.</summary>
     public static void LabeledValue(string label, string value, string? help = null)
     {
-        RowLabel(label);
+        RowLabel(label, null);
         ImGui.TextUnformatted(value);
         Tooltip(Labels.CopyTip(help));
         if (ImGui.IsItemClicked())
@@ -88,10 +83,15 @@ public static partial class Ui
         }
     }
 
-    /// <summary>Puts the next item of the given width at the right end of the line. Measured from the space left, so it also stays inside a table cell.</summary>
+    /// <summary>
+    /// Puts the next item of the given width at the right end of the previous item's line. Measured from the space
+    /// left, so it also stays inside a table cell. When it would overlap the previous item, it goes on the next line.
+    /// </summary>
     public static void AlignRight(float width)
     {
-        var x = RightAlignX(ImGui.GetCursorPosX(), ImGui.GetContentRegionAvail().X, width);
+        // The previous item's right edge in the same window-local space as the cursor.
+        var previousRight = ImGui.GetItemRectMax().X - ImGui.GetWindowPos().X + ImGui.GetScrollX();
+        var x = RightAlignX(ImGui.GetCursorPosX(), ImGui.GetContentRegionAvail().X, width, previousRight, ImGui.GetStyle().ItemSpacing.X);
         if (x == null)
             return;
         // SetCursorPosX, not SameLine(x): SameLine adds the group and column offsets on top, which the cursor already holds.
@@ -99,10 +99,11 @@ public static partial class Ui
         ImGui.SetCursorPosX(x.Value);
     }
 
-    internal static float? RightAlignX(float cursorX, float available, float width)
+    /// <summary>The x that ends the item at the line's right end, or null when it doesn't fit after the previous item.</summary>
+    internal static float? RightAlignX(float cursorX, float available, float width, float previousRight, float spacing)
     {
         var x = cursorX + available - width;
-        return x > cursorX ? x : null;
+        return x > cursorX && x >= previousRight + spacing ? x : null;
     }
 
     /// <summary>Opens the next window centred on the main viewport, when it appears.</summary>
@@ -114,17 +115,21 @@ public static partial class Ui
     /// <summary>
     /// True once the same item has been hovered for the delay (Shift skips the wait). Call every frame
     /// while the item is hovered; the timer restarts when the item changes or a frame passes without a call.
+    /// One delayed hover is tracked at a time: two ids called in one frame keep restarting each other.
     /// </summary>
     public static bool HoverDelay(string id, double delaySeconds = 0.3)
         => hoverClock.Update(id, ImGui.GetTime(), ImGui.GetFrameCount(), ImGui.GetIO().KeyShift, delaySeconds);
 
-    private static void RowLabel(string label)
+    private static void RowLabel(string label, string? help)
     {
         // The gutter counts from the row's own start, so an indented row keeps its value column with its label.
         var start = ImGui.GetCursorPosX();
         ImGui.AlignTextToFramePadding();
         using (var _ = Style.Override().Colour(ImGuiCol.Text, Theme.Current.Palette.Muted))
             ImGui.TextUnformatted(Labels.Visible(label));
+        // Before the width is set: the tooltip's own text item would use up the caller's pending width.
+        if (help != null)
+            Tooltip(help);
         // SetCursorPosX, not SameLine(offset): SameLine adds the group and column offsets on top, which
         // start already holds, so a row in a group or table cell would land twice as far in.
         ImGui.SameLine();

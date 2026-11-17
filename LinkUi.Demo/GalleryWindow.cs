@@ -103,7 +103,7 @@ internal sealed partial class GalleryWindow : ToolWindow
     {
         SectionTitle("Self-test");
         var p = Theme.Current.Palette;
-        using (var _ = Style.Override().Colour(ImGuiCol.Text, p == null ? Vector4.One : selfTestPassed ? p.Success : p.Error))
+        using (var _ = Style.Override().Colour(ImGuiCol.Text, selfTestPassed ? p.Success : p.Error))
             ImGui.TextUnformatted(selfTestLine);
         if (selfTestProblem != null)
             ImGui.TextWrapped(selfTestProblem);
@@ -165,12 +165,7 @@ internal sealed partial class GalleryWindow : ToolWindow
         if (!ReferenceEquals(palette, tokensPalette))
         {
             tokensPalette = palette;
-            tokens = palette == null ? [] : ReadTokens(palette);
-        }
-        if (tokens.Length == 0)
-        {
-            ImGui.TextUnformatted("No palette: LinkUi has no host.");
-            return;
+            tokens = ReadTokens(palette);
         }
         if (!ImGui.BeginTable("tokens", 4, ImGuiTableFlags.SizingStretchSame))
             return;
